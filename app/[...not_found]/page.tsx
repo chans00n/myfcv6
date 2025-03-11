@@ -1,6 +1,11 @@
 import Link from "next/link"
 
-export default function NotFound() {
+export const metadata = {
+  title: 'Page Not Found - MYFC',
+  description: 'The page you are looking for could not be found.',
+}
+
+export default function NotFoundCatchAll() {
   return (
     <div className="container flex items-center justify-center min-h-[50vh]">
       <div className="w-full max-w-md p-6 bg-card text-card-foreground rounded-lg shadow-sm">
