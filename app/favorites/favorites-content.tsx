@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset } from "@/components/ui/sidebar"
 import { useSidebarContext } from "@/components/sidebar-context"
@@ -33,6 +33,15 @@ export default function FavoritesContent() {
   const [activeTab, setActiveTab] = useState("workouts")
   const [searchQuery, setSearchQuery] = useState("")
   const [sortOption, setSortOption] = useState("newest")
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
 
   // Filter favorites based on search query
   const filteredWorkouts = favoriteWorkouts.filter(
