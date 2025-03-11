@@ -12,4 +12,16 @@ export const viewport: Viewport = {
   ],
   width: 'device-width',
   initialScale: 1,
+}
+
+export default function NotFoundLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="min-h-screen bg-background">
+      {children}
+    </div>
+  )
 } 
