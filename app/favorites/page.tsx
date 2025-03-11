@@ -1,9 +1,5 @@
-"use client"
-
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
-import { FavoritesProvider } from "@/context/favorites-context"
-import { SidebarProvider } from "@/components/sidebar-context"
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-background">
@@ -23,19 +19,16 @@ const LoadingFallback = () => (
   </div>
 )
 
-const FavoritesContent = dynamic(() => import("./favorites-content"), {
+const FavoritesClientPage = dynamic(() => import("./client-page"), {
+  ssr: false,
   loading: LoadingFallback,
 })
 
 export default function FavoritesPage() {
   return (
-    <SidebarProvider>
-      <FavoritesProvider>
-        <Suspense fallback={<LoadingFallback />}>
-          <FavoritesContent />
-        </Suspense>
-      </FavoritesProvider>
-    </SidebarProvider>
+    <Suspense fallback={<LoadingFallback />}>
+      <FavoritesClientPage />
+    </Suspense>
   )
 }
 
