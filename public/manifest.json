@@ -1,0 +1,21 @@
+{
+  "name": "MYFC - My Facial Coach",
+  "short_name": "MYFC",
+  "description": "Facial fitness workouts and exercises to tone and rejuvenate your facial muscles",
+  "start_url": "/?source=pwa",
+  "id": "/?source=pwa",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#a4b61a",
+  "theme_color": "#a4b61a",
+  "icons": [
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "196x196",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

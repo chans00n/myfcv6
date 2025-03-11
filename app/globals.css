@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    /* Lime color palette */
+    --primary: 65 70% 62%;
+    --primary-foreground: 65 10% 10%;
+
+    --secondary: 65 10% 96%;
+    --secondary-foreground: 65 10% 15%;
+
+    --muted: 65 10% 96%;
+    --muted-foreground: 65 10% 45%;
+
+    --accent: 65 70% 92%;
+    --accent-foreground: 65 10% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 65 10% 90%;
+    --input: 65 10% 90%;
+    --ring: 65 70% 50%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar colors updated to match lime palette */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-muted: 65 10% 96%;
+    --sidebar-muted-foreground: 65 10% 45%;
+    --sidebar-accent: 65 70% 92%;
+    --sidebar-accent-foreground: 65 10% 15%;
+    --sidebar-border: 65 10% 90%;
+    --sidebar-primary: 65 70% 62%;
+    --sidebar-primary-foreground: 65 10% 10%;
+
+    --sat: env(safe-area-inset-top);
+    --sar: env(safe-area-inset-right);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+  }
+
+  .dark {
+    --background: 220 10% 10%;
+    --foreground: 220 10% 98%;
+
+    --card: 220 10% 10%;
+    --card-foreground: 220 10% 98%;
+
+    --popover: 220 10% 10%;
+    --popover-foreground: 220 10% 98%;
+
+    /* Lime color palette for dark mode */
+    --primary: 65 70% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 65 10% 15%;
+    --secondary-foreground: 65 10% 98%;
+
+    --muted: 65 10% 15%;
+    --muted-foreground: 65 10% 65%;
+
+    /* Adjusted accent colors for dark mode */
+    --accent: 65 50% 25%;
+    --accent-foreground: 65 70% 90%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 65 10% 20%;
+    --input: 65 10% 20%;
+    --ring: 65 70% 40%;
+
+    /* Sidebar colors for dark mode */
+    --sidebar-background: 220 10% 10%;
+    --sidebar-foreground: 220 10% 98%;
+    --sidebar-muted: 65 10% 15%;
+    --sidebar-muted-foreground: 65 10% 65%;
+    --sidebar-accent: 65 50% 25%;
+    --sidebar-accent-foreground: 65 70% 90%;
+    --sidebar-border: 65 10% 20%;
+    --sidebar-primary: 65 70% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+  }
+}
+
+/* Add these utility classes to force dark mode for testing */
+.force-dark {
+  color-scheme: dark;
+  --background: 220 10% 10%;
+  --foreground: 220 10% 98%;
+  --card: 220 10% 10%;
+  --card-foreground: 220 10% 98%;
+  --popover: 220 10% 10%;
+  --popover-foreground: 220 10% 98%;
+  --primary: 65 70% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 65 10% 15%;
+  --secondary-foreground: 65 10% 98%;
+  --muted: 65 10% 15%;
+  --muted-foreground: 65 10% 65%;
+  --accent: 65 50% 25%;
+  --accent-foreground: 65 70% 90%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 65 10% 20%;
+  --input: 65 10% 20%;
+  --ring: 65 70% 40%;
+  --sidebar-background: 220 10% 10%;
+  --sidebar-foreground: 220 10% 98%;
+  --sidebar-muted: 65 10% 15%;
+  --sidebar-muted-foreground: 65 10% 65%;
+  --sidebar-accent: 65 50% 25%;
+  --sidebar-accent-foreground: 65 70% 90%;
+  --sidebar-border: 65 10% 20%;
+  --sidebar-primary: 65 70% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+}
+
+/* Update this to use lime colors for dark mode with higher specificity */
+html.dark {
+  --primary: 65 70% 45% !important;
+  --primary-foreground: 0 0% 100% !important;
+  --accent: 65 50% 25% !important;
+  --accent-foreground: 65 70% 90% !important;
+  --secondary: 65 10% 15% !important;
+  --secondary-foreground: 65 10% 98% !important;
+  --muted: 65 10% 15% !important;
+  --muted-foreground: 65 10% 65% !important;
+  --background: 220 10% 10% !important;
+  --foreground: 220 10% 98% !important;
+  --card: 220 10% 10% !important;
+  --card-foreground: 220 10% 98% !important;
+  --border: 65 10% 20% !important;
+  --input: 65 10% 20% !important;
+  --ring: 65 70% 40% !important;
+  --sidebar-primary: 65 70% 45% !important;
+  --sidebar-primary-foreground: 0 0% 100% !important;
+  --sidebar-accent: 65 50% 25% !important;
+  --sidebar-accent-foreground: 65 70% 90% !important;
+  --sidebar-border: 65 10% 20% !important;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Add these styles to handle iOS safe areas */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(var(--sal), env(safe-area-inset-left));
+    padding-right: max(var(--sar), env(safe-area-inset-right));
+    padding-bottom: max(var(--sab), env(safe-area-inset-bottom));
+    padding-top: max(var(--sat), env(safe-area-inset-top));
+  }
+}
+
+/* Ensure content is properly positioned on iOS */
+@media screen and (display-mode: standalone) {
+  main {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(var(--sab) + 60px);
+  }
+
+  .sidebar-inset {
+    height: 100%;
+    overflow: auto;
+  }
+}
+
+/* Add these styles to ensure sidebar hover states use primary color in both light and dark modes */
+@layer utilities {
+  .sidebar-hover-primary {
+    @apply hover:bg-primary/10 hover:text-primary active:bg-primary/15 active:text-primary;
+  }
+
+  /* Active state for sidebar items */
+  [data-active="true"].sidebar-item,
+  [data-sidebar="menu-button"][data-active="true"] {
+    @apply bg-primary/15 text-primary font-medium border-l-2 border-primary;
+  }
+
+  /* Active state for sidebar sub-items */
+  [data-sidebar="menu-sub-button"][data-active="true"] {
+    @apply bg-primary/10 text-primary font-medium border-l-2 border-primary;
+  }
+
+  /* Ensure sidebar menu items use primary color in dark mode */
+  .dark [data-sidebar="menu-button"]:hover,
+  .dark [data-sidebar="menu-action"]:hover,
+  .dark [data-sidebar="menu-sub-button"]:hover {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .dark [data-sidebar="menu-button"][data-active="true"],
+  .dark [data-sidebar="menu-sub-button"][data-active="true"] {
+    @apply bg-primary/15 text-primary border-l-2 border-primary;
+  }
+}
+
