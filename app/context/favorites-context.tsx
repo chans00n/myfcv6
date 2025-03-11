@@ -24,25 +24,31 @@ export function useFavorites() {
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favoriteWorkouts, setFavoriteWorkouts] = useState<Workout[]>([])
   const [favoriteMovements, setFavoriteMovements] = useState<Movement[]>([])
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    // Load favorites from localStorage on mount
-    const savedWorkouts = localStorage.getItem("favoriteWorkouts")
-    const savedMovements = localStorage.getItem("favoriteMovements")
+    // Only run this once on client-side
+    if (typeof window !== "undefined" && !isInitialized) {
+      const savedWorkouts = localStorage.getItem("favoriteWorkouts")
+      const savedMovements = localStorage.getItem("favoriteMovements")
 
-    if (savedWorkouts) {
-      setFavoriteWorkouts(JSON.parse(savedWorkouts))
+      if (savedWorkouts) {
+        setFavoriteWorkouts(JSON.parse(savedWorkouts))
+      }
+      if (savedMovements) {
+        setFavoriteMovements(JSON.parse(savedMovements))
+      }
+      setIsInitialized(true)
     }
-    if (savedMovements) {
-      setFavoriteMovements(JSON.parse(savedMovements))
-    }
-  }, [])
+  }, [isInitialized])
 
   useEffect(() => {
-    // Save favorites to localStorage when they change
-    localStorage.setItem("favoriteWorkouts", JSON.stringify(favoriteWorkouts))
-    localStorage.setItem("favoriteMovements", JSON.stringify(favoriteMovements))
-  }, [favoriteWorkouts, favoriteMovements])
+    // Only save to localStorage after initialization and on client-side
+    if (isInitialized && typeof window !== "undefined") {
+      localStorage.setItem("favoriteWorkouts", JSON.stringify(favoriteWorkouts))
+      localStorage.setItem("favoriteMovements", JSON.stringify(favoriteMovements))
+    }
+  }, [favoriteWorkouts, favoriteMovements, isInitialized])
 
   const toggleWorkoutFavorite = (workout: Workout) => {
     setFavoriteWorkouts((prev) => {

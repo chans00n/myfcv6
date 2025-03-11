@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarInset } from "@/components/ui/sidebar"
 import { useSidebarContext } from "@/components/sidebar-context"
 import {
   Breadcrumb,
@@ -87,7 +87,7 @@ export default function FavoritesContent() {
   const hasFavorites = favoriteWorkouts.length > 0 || favoriteMovements.length > 0
 
   return (
-    <SidebarProvider defaultOpen={isOpen}>
+    <>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -205,6 +205,6 @@ export default function FavoritesContent() {
           </div>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   )
 } 

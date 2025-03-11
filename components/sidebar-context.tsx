@@ -30,7 +30,6 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isInitialized && typeof window !== "undefined") {
       localStorage.setItem("sidebar-state", String(isOpen))
-      console.log("Sidebar state saved to localStorage:", isOpen)
     }
   }, [isOpen, isInitialized])
 
