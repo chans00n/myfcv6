@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // List of public routes that don't require authentication
-const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
+const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password', '/auth/clear']
 const adminRoutes = ['/admin', '/admin/workouts', '/admin/videos', '/admin/users', '/admin/settings', '/admin/setup']
 
 export async function middleware(request: NextRequest) {
@@ -19,12 +19,12 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          const cookie = request.cookies.get(name)?.value
-          // Don't decode the cookie value - let Supabase handle it
-          return cookie
+          const cookie = request.cookies.get(name)
+          // Return the raw value without trying to parse it
+          return cookie?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          // Don't try to parse or modify the cookie value - let Supabase handle it
+          // Set the cookie with the raw value
           response.cookies.set({
             name,
             value,
@@ -75,7 +75,6 @@ export async function middleware(request: NextRequest) {
         id: session.user.id,
         email: session.user.email,
         metadata: session.user.user_metadata,
-        appMetadata: session.user.app_metadata,
         role: session.user.user_metadata?.role
       })
 
@@ -103,7 +102,7 @@ export async function middleware(request: NextRequest) {
 
     // If there's a session and trying to access auth pages
     if (session) {
-      if (pathname.startsWith('/auth/')) {
+      if (pathname.startsWith('/auth/') && !pathname.startsWith('/auth/clear')) {
         console.log('Middleware - Authenticated user accessing auth page, redirecting to dashboard')
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
@@ -112,7 +111,7 @@ export async function middleware(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Middleware error:', error)
-    // On error, redirect to login
+    // On error, redirect to login unless already on an auth page
     if (!request.nextUrl.pathname.startsWith('/auth/')) {
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }

@@ -21,10 +21,14 @@ export default function ClearSessionPage() {
       const cookies = [
         'sb-access-token',
         'sb-refresh-token',
-        'supabase-auth-token'
+        'supabase-auth-token',
+        'supabase-auth-token-legacy',
+        'supabase-auth-refresh-token-legacy',
+        'sb-provider-token',
+        'sb-provider-refresh-token'
       ]
       
-      const paths = ['/', '/auth', '']
+      const paths = ['/', '/auth', '', '/api']
       const domains = [
         window.location.hostname,
         `.${window.location.hostname}`,
@@ -39,11 +43,14 @@ export default function ClearSessionPage() {
         })
       })
       
-      // Clear local storage
+      // Clear local storage and session storage
       localStorage.clear()
       sessionStorage.clear()
       
-      // Force reload to clear any in-memory state
+      // Wait a bit to ensure all cookies are cleared
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Force a hard reload to clear any in-memory state
       window.location.href = '/auth/login'
     }
     
