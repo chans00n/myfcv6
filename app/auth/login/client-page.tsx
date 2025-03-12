@@ -8,13 +8,15 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { createBrowserClient } from "@supabase/ssr"
+import type { Database } from "@/types/supabase"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "sonner"
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -23,6 +25,11 @@ const loginFormSchema = z.object({
 })
 
 type LoginFormValues = z.infer<typeof loginFormSchema>
+
+const supabase = createBrowserClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function LoginPage() {
   const router = useRouter()
@@ -56,8 +63,24 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const redirectTo = searchParams.get("redirectTo") || "/dashboard"
-      await signIn(data.email, data.password, redirectTo)
+      const redirectTo = searchParams.get("redirectTo")
+      await signIn(data.email, data.password)
+      
+      // Check if user is trying to access admin routes
+      if (redirectTo?.startsWith('/admin')) {
+        const { data: { user } } = await supabase.auth.getUser()
+        const userRole = user?.user_metadata.role
+        
+        if (userRole !== 'admin') {
+          toast.error("Access denied", {
+            description: "You do not have permission to access the admin area.",
+          })
+          router.push('/')
+          return
+        }
+      }
+      
+      router.push(redirectTo || "/dashboard")
       toast.success("Welcome back!", {
         description: "Successfully signed in to your account.",
       })

@@ -17,22 +17,34 @@ export default function ClearSessionPage() {
       )
       await supabase.auth.signOut()
       
-      // Clear cookies
+      // Clear cookies with different path/domain combinations
       const cookies = [
         'sb-access-token',
         'sb-refresh-token',
         'supabase-auth-token'
       ]
       
+      const paths = ['/', '/auth', '']
+      const domains = [
+        window.location.hostname,
+        `.${window.location.hostname}`,
+        ''
+      ]
+      
       cookies.forEach(name => {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`
+        paths.forEach(path => {
+          domains.forEach(domain => {
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ''}`
+          })
+        })
       })
       
       // Clear local storage
       localStorage.clear()
+      sessionStorage.clear()
       
-      // Redirect to login
-      router.push('/auth/login')
+      // Force reload to clear any in-memory state
+      window.location.href = '/auth/login'
     }
     
     clearSession()
