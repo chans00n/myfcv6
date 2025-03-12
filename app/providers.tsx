@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react"
 import dynamic from "next/dynamic"
+import { Toaster } from "sonner"
 
 const ThemeProvider = dynamic(() => import("@/components/theme-context").then(mod => mod.ThemeProvider), { ssr: false })
 const SidebarProvider = dynamic(() => import("@/components/sidebar-context").then(mod => mod.SidebarProvider), { ssr: false })
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <AuthProvider>
         <SidebarProvider>
           <FavoritesProvider>
+            <Toaster richColors position="top-center" />
             <PWAInitializer />
             {children}
             <MobileNavWrapper />

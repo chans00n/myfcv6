@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -26,8 +26,24 @@ type LoginFormValues = z.infer<typeof loginFormSchema>
 
 export default function LoginClientPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const { signIn } = useAuth()
+
+  useEffect(() => {
+    const verifiedStatus = searchParams.get("verified")
+    if (verifiedStatus === "pending") {
+      toast("Check your email", {
+        description: "Please verify your email address before logging in.",
+        duration: 5000,
+      })
+    } else if (verifiedStatus === "success") {
+      toast.success("Email verified!", {
+        description: "Your email has been verified. You can now log in.",
+        duration: 5000,
+      })
+    }
+  }, [searchParams])
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -43,11 +59,21 @@ export default function LoginClientPage() {
 
     try {
       await signIn(data.email, data.password)
+      toast.success("Welcome back!", {
+        description: "Successfully signed in to your account.",
+      })
       router.push("/dashboard")
-      toast.success("Successfully signed in!")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error)
-      toast.error("Failed to sign in. Please check your credentials.")
+      if (error?.message?.toLowerCase().includes("email not confirmed")) {
+        toast.error("Email not verified", {
+          description: "Please check your email for the verification link.",
+        })
+      } else {
+        toast.error("Failed to sign in", {
+          description: "Please check your credentials and try again.",
+        })
+      }
     } finally {
       setIsLoading(false)
     }

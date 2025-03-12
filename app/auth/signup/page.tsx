@@ -54,11 +54,16 @@ export default function SignupPage() {
 
     try {
       await signUp(data.email, data.password)
-      toast.success("Account created successfully! Please check your email to verify your account.")
-      router.push("/auth/login")
-    } catch (error) {
+      toast.success("Account created successfully!", {
+        description: "Please check your email for a verification link to complete your registration.",
+        duration: 6000,
+      })
+      router.push("/auth/login?verified=pending")
+    } catch (error: any) {
       console.error("Signup error:", error)
-      toast.error("Failed to create account. Please try again.")
+      toast.error("Failed to create account", {
+        description: error?.message || "Please try again or contact support if the problem persists.",
+      })
     } finally {
       setIsLoading(false)
     }
