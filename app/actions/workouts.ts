@@ -230,4 +230,44 @@ export async function unpublishWorkout(id: string) {
   revalidatePath("/admin/workouts")
   revalidatePath(`/admin/workouts/${id}`)
   return data
+}
+
+export async function createWorkouts(workouts: (Workout & { content_blocks?: ContentBlock[] })[]) {
+  const supabase = createServerClient()
+  
+  for (const workoutData of workouts) {
+    const { content_blocks, ...workout } = workoutData
+    
+    // Create the workout
+    const { data: createdWorkout, error: workoutError } = await supabase
+      .from("workouts")
+      .insert(workout)
+      .select()
+      .single()
+      
+    if (workoutError) {
+      console.error(`Failed to create workout "${workout.title}":`, workoutError)
+      continue
+    }
+    
+    // Create content blocks if provided
+    if (content_blocks?.length) {
+      const { error: blocksError } = await supabase
+        .from("workout_content_blocks")
+        .insert(
+          content_blocks.map((block) => ({
+            workout_id: createdWorkout.id,
+            type: block.type,
+            content: block.content,
+            order: block.order,
+          }))
+        )
+        
+      if (blocksError) {
+        console.error(`Failed to create content blocks for workout "${workout.title}":`, blocksError)
+      }
+    }
+  }
+  
+  revalidatePath("/admin/workouts")
 } 
