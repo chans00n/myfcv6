@@ -1,7 +1,11 @@
-export const dynamic = "force-static"
-
 import { Suspense } from "react"
-import dynamic from "next/dynamic"
+import { default as dynamicImport } from "next/dynamic"
+
+// Move dynamic config to a separate variable
+const config = {
+  dynamic: "force-static",
+} as const
+export const dynamic = config.dynamic
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-background">
@@ -21,14 +25,15 @@ const LoadingFallback = () => (
   </div>
 )
 
-const FavoritesClientPage = dynamic(() => import("./client-page"), {
+// Use the imported dynamic function
+const ClientPage = dynamicImport(() => import("./client-page"), {
   loading: LoadingFallback,
 })
 
 export default function FavoritesPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <FavoritesClientPage />
+      <ClientPage />
     </Suspense>
   )
 }

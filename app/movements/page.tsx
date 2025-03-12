@@ -1,7 +1,5 @@
-export const dynamic = "force-static"
-
 import { Suspense } from "react"
-import dynamic from "next/dynamic"
+import { default as dynamicImport } from "next/dynamic"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useSidebarContext } from "@/components/sidebar-context"
@@ -14,6 +12,8 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Home, Waves } from "lucide-react"
 import { MovementLibrary } from "@/components/movement-library"
+
+export const dynamic = "force-static"
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-background">
@@ -33,14 +33,14 @@ const LoadingFallback = () => (
   </div>
 )
 
-const MovementsClientPage = dynamic(() => import("./client-page"), {
+const ClientPage = dynamicImport(() => import("./client-page"), {
   loading: LoadingFallback,
 })
 
 export default function MovementsPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <MovementsClientPage />
+      <ClientPage />
     </Suspense>
   )
 }
