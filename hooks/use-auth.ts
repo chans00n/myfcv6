@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
@@ -22,10 +24,22 @@ export function useAuth() {
         setUser({
           id: session.user.id,
           email: session.user.email!,
-          role: session.user.user_metadata.role || "user",
+          role: session.user.user_metadata?.role || "user",
         })
       } else {
         setUser(null)
+      }
+      setLoading(false)
+    })
+
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          role: session.user.user_metadata?.role || "user",
+        })
       }
       setLoading(false)
     })
