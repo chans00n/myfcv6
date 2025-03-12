@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 
 // List of public routes that don't require authentication
 const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
-const adminRoutes = ['/admin', '/admin/workouts', '/admin/videos', '/admin/users', '/admin/settings']
+const adminRoutes = ['/admin', '/admin/workouts', '/admin/videos', '/admin/users', '/admin/settings', '/admin/setup']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -52,36 +52,48 @@ export async function middleware(request: NextRequest) {
   )
 
   try {
+    console.log('Middleware - Processing request for path:', request.nextUrl.pathname)
+    
     const { data: { session } } = await supabase.auth.getSession()
+    console.log('Middleware - Session:', session ? 'exists' : 'null')
+    
     const pathname = request.nextUrl.pathname
 
     // Check for admin routes
     if (adminRoutes.some(route => pathname.startsWith(route))) {
+      console.log('Middleware - Accessing admin route')
+      
       if (!session) {
+        console.log('Middleware - No session, redirecting to login')
         const redirectUrl = new URL('/auth/login', request.url)
         redirectUrl.searchParams.set('redirectTo', pathname)
         return NextResponse.redirect(redirectUrl)
       }
 
-      // Debug log
-      console.log('Session user:', {
+      // Debug log session details
+      console.log('Middleware - Session user details:', {
+        id: session.user.id,
+        email: session.user.email,
         metadata: session.user.user_metadata,
+        appMetadata: session.user.app_metadata,
         role: session.user.user_metadata?.role
       })
 
       // Check if user has admin role
       const userRole = session.user.user_metadata?.role
       if (userRole !== 'admin') {
-        console.log('User role not admin:', userRole)
+        console.log('Middleware - User role not admin:', userRole)
         return NextResponse.redirect(new URL('/', request.url))
       }
 
+      console.log('Middleware - Admin access granted')
       return response
     }
 
     // If there's no session and trying to access a protected route
     if (!session) {
       if (!publicRoutes.includes(pathname) && !pathname.startsWith('/auth/')) {
+        console.log('Middleware - No session for protected route, redirecting to login')
         const redirectUrl = new URL('/auth/login', request.url)
         redirectUrl.searchParams.set('redirectTo', pathname)
         return NextResponse.redirect(redirectUrl)
@@ -92,6 +104,7 @@ export async function middleware(request: NextRequest) {
     // If there's a session and trying to access auth pages
     if (session) {
       if (pathname.startsWith('/auth/')) {
+        console.log('Middleware - Authenticated user accessing auth page, redirecting to dashboard')
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     }
