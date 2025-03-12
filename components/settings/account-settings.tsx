@@ -195,7 +195,12 @@ export function AccountSettings() {
         <CardContent>
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || ""} />
+              <AvatarImage 
+                src={profile?.avatar_url || ""} 
+                alt={profile?.name || ""} 
+                className="object-cover"
+                style={{ objectPosition: 'center' }}
+              />
               <AvatarFallback>
                 {profile?.name
                   ?.split(" ")
