@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import dynamic from "next/dynamic"
+import ClientWrapper from "./client-wrapper"
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-background">
@@ -19,15 +19,10 @@ const LoadingFallback = () => (
   </div>
 )
 
-const FavoritesClientPage = dynamic(() => import("./client-page"), {
-  ssr: false,
-  loading: LoadingFallback,
-})
-
 export default function FavoritesPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <FavoritesClientPage />
+      <ClientWrapper fallback={<LoadingFallback />} />
     </Suspense>
   )
 }
