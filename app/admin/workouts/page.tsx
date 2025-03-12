@@ -22,9 +22,73 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal, Plus, Upload, Download } from "lucide-react"
 import Link from "next/link"
+import { getWorkouts, deleteWorkout, publishWorkout, unpublishWorkout } from "@/app/actions/workouts"
+import { useRouter } from "next/navigation"
+import { format } from "date-fns"
+import { WorkoutStatus, WorkoutType, WorkoutDifficulty } from "@/types/supabase"
 
 export default function AdminWorkoutsPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const router = useRouter()
+  const [workouts, setWorkouts] = useState<Awaited<ReturnType<typeof getWorkouts>>>([])
+
+  // Fetch workouts on mount
+  useState(() => {
+    getWorkouts().then(setWorkouts)
+  })
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this workout?")) {
+      await deleteWorkout(id)
+      router.refresh()
+    }
+  }
+
+  const handlePublish = async (id: string) => {
+    await publishWorkout(id)
+    router.refresh()
+  }
+
+  const handleUnpublish = async (id: string) => {
+    await unpublishWorkout(id)
+    router.refresh()
+  }
+
+  const filteredWorkouts = workouts?.filter((workout) => {
+    if (!searchQuery) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      workout.title.toLowerCase().includes(query) ||
+      workout.description?.toLowerCase().includes(query) ||
+      workout.type.toLowerCase().includes(query)
+    )
+  })
+
+  const getDifficultyVariant = (difficulty: WorkoutDifficulty) => {
+    switch (difficulty) {
+      case "basic":
+        return "outline"
+      case "intermediate":
+        return "secondary"
+      case "advanced":
+        return "default"
+      default:
+        return "outline"
+    }
+  }
+
+  const getStatusVariant = (status: WorkoutStatus) => {
+    switch (status) {
+      case "draft":
+        return "secondary"
+      case "published":
+        return "default"
+      case "archived":
+        return "outline"
+      default:
+        return "outline"
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -78,39 +142,60 @@ export default function AdminWorkoutsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Sample row - will be replaced with real data */}
-              <TableRow>
-                <TableCell className="font-medium">Sunday Facial Fitness</TableCell>
-                <TableCell>Facial Fitness</TableCell>
-                <TableCell>15 min</TableCell>
-                <TableCell>
-                  <Badge variant="outline">Basic</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">Draft</Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem>Preview</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
+              {filteredWorkouts?.map((workout) => (
+                <TableRow key={workout.id}>
+                  <TableCell className="font-medium">{workout.title}</TableCell>
+                  <TableCell>{workout.type}</TableCell>
+                  <TableCell>{workout.duration} min</TableCell>
+                  <TableCell>
+                    <Badge variant={getDifficultyVariant(workout.difficulty)}>
+                      {workout.difficulty}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusVariant(workout.status)}>
+                      {workout.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => router.push(`/admin/workouts/${workout.id}`)}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/workouts/${workout.id}`)}>
+                          Preview
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {workout.status === "published" ? (
+                          <DropdownMenuItem onClick={() => handleUnpublish(workout.id)}>
+                            Unpublish
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => handlePublish(workout.id)}>
+                            Publish
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => handleDelete(workout.id)}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
