@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
@@ -50,18 +49,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
-
-  // Protect admin routes
-  useEffect(() => {
-    if (!user || user.role !== "admin") {
-      router.push("/")
-    }
-  }, [user, router])
-
-  if (!user || user.role !== "admin") {
-    return null
-  }
+  const { signOut } = useAuth()
 
   return (
     <div className="flex h-screen">
