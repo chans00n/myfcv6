@@ -4,6 +4,7 @@ drop policy if exists "Users can insert their own profile." on profiles;
 drop policy if exists "Users can update their own profile." on profiles;
 drop trigger if exists on_auth_user_created on auth.users;
 drop function if exists handle_new_user();
+drop table if exists public.profiles;
 
 -- Create a table for public profiles
 create table if not exists public.profiles (
@@ -15,6 +16,7 @@ create table if not exists public.profiles (
   twitter_url text,
   github_url text,
   linkedin_url text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
   
   constraint name_length check (char_length(name) >= 2 or name is null),
@@ -38,26 +40,43 @@ create policy "Users can update their own profile."
   using ( auth.uid() = id );
 
 -- Create a function to handle new user creation
-create function public.handle_new_user()
+create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
-security definer
+security definer set search_path = public
 as $$
+declare
+  default_name text;
 begin
-  insert into public.profiles (id, email, name)
-  values (
+  -- Set a default name from email if no full_name in metadata
+  default_name := coalesce(
+    new.raw_user_metadata->>'full_name',
+    split_part(new.email, '@', 1)
+  );
+
+  insert into public.profiles (
+    id,
+    email,
+    name,
+    avatar_url,
+    created_at,
+    updated_at
+  ) values (
     new.id,
     new.email,
-    coalesce(
-      new.raw_user_metadata->>'full_name',
-      split_part(new.email, '@', 1)
-    )
+    default_name,
+    new.raw_user_metadata->>'avatar_url',
+    now(),
+    now()
   );
   return new;
 exception
+  when unique_violation then
+    -- Profile already exists, ignore
+    return new;
   when others then
-    -- Log the error (in a real application, you'd want proper error logging)
-    raise notice 'Error in handle_new_user: %', SQLERRM;
+    -- Log the error and continue
+    raise warning 'Error in handle_new_user: %', SQLERRM;
     return new;
 end;
 $$;

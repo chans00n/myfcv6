@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { createWorkout, updateWorkout } from "@/app/actions/workouts"
+import { uploadFile } from "@/lib/supabase/upload"
 import { Database } from "@/types/supabase"
 
 type Workout = Database["public"]["Tables"]["workouts"]["Row"]
@@ -75,6 +77,10 @@ export function WorkoutForm({ workout }: WorkoutFormProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleUpload = async (file: File) => {
+    return uploadFile(file)
   }
 
   return (
@@ -207,12 +213,17 @@ export function WorkoutForm({ workout }: WorkoutFormProps) {
           name="cover_image"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cover Image URL</FormLabel>
+              <FormLabel>Cover Image</FormLabel>
               <FormControl>
-                <Input placeholder="Enter cover image URL" {...field} />
+                <ImageUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  onUpload={handleUpload}
+                  disabled={isLoading}
+                />
               </FormControl>
               <FormDescription>
-                A URL to an image that represents this workout.
+                Upload an image that represents this workout.
               </FormDescription>
               <FormMessage />
             </FormItem>

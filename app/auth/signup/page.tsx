@@ -53,7 +53,7 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      await signUp(data.email, data.password)
+      await signUp(data.email, data.password, data.name)
       toast.success("Account created successfully!", {
         description: "Please check your email for a verification link to complete your registration.",
         duration: 6000,
