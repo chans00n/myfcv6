@@ -4,7 +4,11 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Camera, Loader2 } from "lucide-react"
+import { Camera, Loader2, LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
+import { toast } from "sonner"
+import React from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +16,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import React from "react"
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -44,6 +47,8 @@ const defaultValues: Partial<ProfileFormValues> = {
 
 export function AccountSettings() {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { signOut } = useAuth()
 
   // Add a reference to the form for scrolling
   const formRef = React.useRef<HTMLFormElement>(null)
@@ -69,6 +74,17 @@ export function AccountSettings() {
       console.log(data)
       setIsLoading(false)
     }, 1000)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      toast.success("Signed out successfully")
+      router.push("/auth/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast.error("Failed to sign out")
+    }
   }
 
   return (
@@ -205,6 +221,31 @@ export function AccountSettings() {
           </Card>
         </form>
       </Form>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Account Actions</CardTitle>
+          <CardDescription>Manage your account access and security.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div>
+              <h3 className="text-sm font-medium">Sign Out</h3>
+              <p className="text-sm text-muted-foreground">
+                Sign out of your account on this device.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={handleLogout}
+              className="w-full sm:w-auto"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
