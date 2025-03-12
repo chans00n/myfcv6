@@ -1,35 +1,28 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import dynamic from "next/dynamic"
+import { Providers } from "./providers"
 
 const inter = Inter({ subsets: ["latin"] })
 
-// Dynamic imports for client components
-const ThemeProvider = dynamic(() => import("@/components/theme-context").then(mod => mod.ThemeProvider), { ssr: false })
-const SidebarProvider = dynamic(() => import("@/components/sidebar-context").then(mod => mod.SidebarProvider), { ssr: false })
-const FavoritesProvider = dynamic(() => import("@/context/favorites-context").then(mod => mod.FavoritesProvider), { ssr: false })
-const MobileNavWrapper = dynamic(() => import("@/components/mobile-nav-wrapper").then(mod => mod.MobileNavWrapper), { ssr: false })
-const PWAInitializer = dynamic(() => import("./pwa-init").then(mod => mod.PWAInitializer), { ssr: false })
-const PWAInstallPrompt = dynamic(() => import("@/components/pwa-install-prompt").then(mod => mod.PWAInstallPrompt), { ssr: false })
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#a4b61a"
+}
 
 export const metadata: Metadata = {
   title: "MYFC Dashboard",
   description: "Dashboard for MYFC application",
   manifest: "/manifest.json",
-  themeColor: "#a4b61a",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "MYFC",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
   },
   icons: {
     icon: [
@@ -53,13 +46,7 @@ export const metadata: Metadata = {
         type: "image/png",
       }
     ]
-  },
-  other: {
-    "apple-mobile-web-app-capable": "yes",
-    "apple-touch-fullscreen": "yes",
-    "mobile-web-app-capable": "yes",
-  },
-  generator: 'v0.dev'
+  }
 }
 
 export default function RootLayout({
@@ -143,16 +130,7 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className={inter.className}>
-        <ThemeProvider defaultTheme="dark">
-          <SidebarProvider>
-            <FavoritesProvider>
-              <PWAInitializer />
-              {children}
-              <MobileNavWrapper />
-              <PWAInstallPrompt />
-            </FavoritesProvider>
-          </SidebarProvider>
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
