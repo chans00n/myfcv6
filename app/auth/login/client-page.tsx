@@ -24,26 +24,11 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>
 
-export default function LoginClientPage() {
+export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const { signIn } = useAuth()
-
-  useEffect(() => {
-    const verifiedStatus = searchParams.get("verified")
-    if (verifiedStatus === "pending") {
-      toast("Check your email", {
-        description: "Please verify your email address before logging in.",
-        duration: 5000,
-      })
-    } else if (verifiedStatus === "success") {
-      toast.success("Email verified!", {
-        description: "Your email has been verified. You can now log in.",
-        duration: 5000,
-      })
-    }
-  }, [searchParams])
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -53,6 +38,19 @@ export default function LoginClientPage() {
       rememberMe: false,
     },
   })
+
+  useEffect(() => {
+    const verified = searchParams.get("verified")
+    if (verified === "success") {
+      toast.success("Email verified successfully!", {
+        description: "You can now log in to your account.",
+      })
+    } else if (verified === "pending") {
+      toast.info("Please verify your email", {
+        description: "Check your inbox for a verification link.",
+      })
+    }
+  }, [searchParams])
 
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true)
@@ -65,31 +63,20 @@ export default function LoginClientPage() {
       })
     } catch (error: any) {
       console.error("Login error:", error)
-      if (error?.message?.toLowerCase().includes("email not confirmed")) {
-        toast.error("Email not verified", {
-          description: "Please check your email for the verification link.",
-        })
-      } else {
-        toast.error("Failed to sign in", {
-          description: "Please check your credentials and try again.",
-        })
-      }
+      toast.error("Failed to sign in", {
+        description: error?.message || "Please check your credentials and try again.",
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-      <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Enter your credentials to sign in to your account</p>
-      </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <div className="flex min-h-screen items-center justify-center">
+      <Card className="w-full max-w-md">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4 pt-6">
               <FormField
                 control={form.control}
                 name="email"
@@ -97,7 +84,7 @@ export default function LoginClientPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="Enter your email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -110,31 +97,26 @@ export default function LoginClientPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="Enter your password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <div className="flex items-center justify-between">
-                <FormField
-                  control={form.control}
-                  name="rememberMe"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Remember me
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
-                <Link href="/auth/forgot-password" className="text-sm font-medium text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
+              <FormField
+                control={form.control}
+                name="rememberMe"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="text-sm font-normal">Remember me</FormLabel>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
@@ -145,17 +127,15 @@ export default function LoginClientPage() {
                   "Sign in"
                 )}
               </Button>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col">
-          <div className="mt-2 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link href="/auth/signup" className="font-medium text-primary hover:underline">
-              Sign up
-            </Link>
-          </div>
-        </CardFooter>
+              <div className="text-sm text-muted-foreground">
+                Don&apos;t have an account?{" "}
+                <Link href="/auth/signup" className="text-primary hover:underline">
+                  Sign up
+                </Link>
+              </div>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
     </div>
   )

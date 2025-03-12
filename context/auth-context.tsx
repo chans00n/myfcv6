@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import type { User } from '@supabase/supabase-js'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 
 import type { Database } from "@/types/supabase"
@@ -12,7 +12,7 @@ type AuthContextType = {
   user: User | null
   loading: boolean
   signIn: (email: string, password: string, redirectTo?: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, name?: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   // Create a new supabase browser client on every render
   const supabase = createBrowserClient<Database>(
@@ -43,13 +44,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
 
           if (event === "SIGNED_IN") {
+            // Set the auth cookie
+            await fetch('/api/auth/set-auth-cookie', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                event: 'SIGNED_IN',
+                session,
+              }),
+            })
+
             // Handle redirect after sign in
+            const redirectTo = searchParams.get('redirectTo') || '/dashboard'
             if (pathname.startsWith("/auth/")) {
-              router.push("/dashboard")
+              router.push(redirectTo)
               router.refresh()
             }
           } else if (event === "SIGNED_OUT") {
-            router.push("/auth/login")
+            // Clear the auth cookie
+            await fetch('/api/auth/clear-auth-cookie', {
+              method: 'POST',
+            })
+
+            router.push('/auth/login')
             router.refresh()
           }
         })
@@ -65,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initializeAuth()
-  }, [supabase, router, pathname])
+  }, [supabase, router, pathname, searchParams])
 
   const signIn = async (email: string, password: string, redirectTo: string = "/dashboard") => {
     try {
@@ -92,19 +111,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push(redirectTo)
         router.refresh()
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign in error:', error)
       throw error
     }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/login?verified=success`,
+          data: {
+            full_name: name
+          }
         },
       })
 
@@ -152,10 +174,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider")
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
 } 

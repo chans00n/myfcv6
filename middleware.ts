@@ -6,12 +6,9 @@ import type { NextRequest } from 'next/server'
 const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
 
 export async function middleware(request: NextRequest) {
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-url', request.url)
-
   let response = NextResponse.next({
     request: {
-      headers: requestHeaders,
+      headers: request.headers,
     },
   })
 
@@ -28,6 +25,10 @@ export async function middleware(request: NextRequest) {
             name,
             value,
             ...options,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/'
           })
         },
         remove(name: string, options: CookieOptions) {
@@ -35,6 +36,11 @@ export async function middleware(request: NextRequest) {
             name,
             value: '',
             ...options,
+            expires: new Date(0),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/'
           })
         },
       },
@@ -58,8 +64,7 @@ export async function middleware(request: NextRequest) {
     // If there's a session and trying to access auth pages
     if (session) {
       if (pathname.startsWith('/auth/')) {
-        const redirectUrl = new URL('/dashboard', request.url)
-        return NextResponse.redirect(redirectUrl)
+        return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     }
 
@@ -68,8 +73,7 @@ export async function middleware(request: NextRequest) {
     console.error('Middleware error:', error)
     // On error, redirect to login
     if (!request.nextUrl.pathname.startsWith('/auth/')) {
-      const redirectUrl = new URL('/auth/login', request.url)
-      return NextResponse.redirect(redirectUrl)
+      return NextResponse.redirect(new URL('/auth/login', request.url))
     }
     return response
   }
