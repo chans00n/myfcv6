@@ -1,8 +1,7 @@
 export const dynamic = "force-static"
-export const runtime = "edge"
 
 import { Suspense } from "react"
-import ClientWrapper from "./client-wrapper"
+import dynamic from "next/dynamic"
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-background">
@@ -22,10 +21,14 @@ const LoadingFallback = () => (
   </div>
 )
 
+const FavoritesClientPage = dynamic(() => import("./client-page"), {
+  loading: LoadingFallback,
+})
+
 export default function FavoritesPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <ClientWrapper fallback={<LoadingFallback />} />
+      <FavoritesClientPage />
     </Suspense>
   )
 }

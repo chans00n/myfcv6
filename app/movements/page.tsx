@@ -1,4 +1,7 @@
-"use client"
+export const dynamic = "force-static"
+
+import { Suspense } from "react"
+import dynamic from "next/dynamic"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useSidebarContext } from "@/components/sidebar-context"
@@ -12,39 +15,33 @@ import {
 import { Home, Waves } from "lucide-react"
 import { MovementLibrary } from "@/components/movement-library"
 
-export default function MovementsPage() {
-  const { isOpen } = useSidebarContext()
-
-  return (
-    <SidebarProvider defaultOpen={isOpen}>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4 w-full">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/dashboard">
-                    <Home className="h-4 w-4 mr-1" />
-                    Home
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/movements">
-                    <Waves className="h-4 w-4 mr-1" />
-                    Movement Library
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-background">
+    <div className="container flex items-center justify-center min-h-[100vh]">
+      <div className="w-full max-w-md p-6 text-center">
+        <div className="animate-pulse">
+          <div className="h-8 w-32 bg-muted rounded mb-4 mx-auto"></div>
+          <div className="h-4 w-48 bg-muted rounded mb-8 mx-auto"></div>
+          <div className="space-y-3">
+            <div className="h-20 bg-muted rounded"></div>
+            <div className="h-20 bg-muted rounded"></div>
+            <div className="h-20 bg-muted rounded"></div>
           </div>
-        </header>
-        <div className="flex-1 overflow-auto">
-          <MovementLibrary />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
+  </div>
+)
+
+const MovementsClientPage = dynamic(() => import("./client-page"), {
+  loading: LoadingFallback,
+})
+
+export default function MovementsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <MovementsClientPage />
+    </Suspense>
   )
 }
 
