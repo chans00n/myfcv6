@@ -13,10 +13,6 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  console.log('Middleware - Starting middleware execution')
-  console.log('Middleware - Request path:', request.nextUrl.pathname)
-  console.log('Middleware - Request cookies:', request.cookies.getAll())
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -24,11 +20,11 @@ export async function middleware(request: NextRequest) {
       cookies: {
         get(name: string) {
           const cookie = request.cookies.get(name)
-          console.log('Middleware - Getting cookie:', name, cookie?.value ? 'exists' : 'null')
+          console.log('Middleware - Cookie get:', { name, exists: !!cookie })
           return cookie?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          console.log('Middleware - Setting cookie:', name)
+          console.log('Middleware - Cookie set:', { name })
           response.cookies.set({
             name,
             value,
@@ -40,7 +36,7 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
-          console.log('Middleware - Removing cookie:', name)
+          console.log('Middleware - Cookie remove:', { name })
           response.cookies.set({
             name,
             value: '',
@@ -57,28 +53,20 @@ export async function middleware(request: NextRequest) {
   )
 
   try {
-    console.log('Middleware - Getting session')
+    console.log('Middleware - Processing request for path:', request.nextUrl.pathname)
+    
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError) {
-      console.error('Middleware - Session error:', sessionError)
-    }
-    
-    console.log('Middleware - Session details:', {
-      exists: !!session,
-      user: session?.user ? {
-        id: session.user.id,
-        email: session.user.email,
-        raw_user_meta_data: session.user.user_metadata,
-        role: session.user.user_metadata?.role
-      } : null
+    console.log('Middleware - Session result:', { 
+      hasSession: !!session,
+      sessionError: sessionError?.message,
+      cookies: request.cookies.getAll().map(c => c.name)
     })
     
     const pathname = request.nextUrl.pathname
 
     // Check for admin routes
     if (adminRoutes.some(route => pathname.startsWith(route))) {
-      console.log('Middleware - Accessing admin route:', pathname)
+      console.log('Middleware - Accessing admin route')
       
       if (!session) {
         console.log('Middleware - No session, redirecting to login')
@@ -87,16 +75,23 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl)
       }
 
-      // Check if user has admin role
-      const userRole = session.user.user_metadata?.role
-      console.log('Middleware - User role check:', {
-        role: userRole,
-        isAdmin: userRole === 'admin',
-        fullMetadata: session.user.user_metadata
+      // Debug log session details
+      console.log('Middleware - Session user details:', {
+        id: session.user.id,
+        email: session.user.email,
+        metadata: session.user.user_metadata,
+        rawMetadata: JSON.stringify(session.user.user_metadata),
+        role: session.user.user_metadata?.role
       })
 
+      // Check if user has admin role
+      const userRole = session.user.user_metadata?.role
       if (userRole !== 'admin') {
-        console.log('Middleware - Access denied: not admin')
+        console.log('Middleware - User role not admin:', {
+          userRole,
+          metadataType: typeof session.user.user_metadata,
+          hasMetadata: !!session.user.user_metadata
+        })
         return NextResponse.redirect(new URL('/', request.url))
       }
 
@@ -123,7 +118,6 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    console.log('Middleware - Completing successfully')
     return response
   } catch (error) {
     console.error('Middleware error:', error)

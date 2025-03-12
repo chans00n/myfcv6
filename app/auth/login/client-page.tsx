@@ -64,14 +64,35 @@ export default function LoginPage() {
 
     try {
       const redirectTo = searchParams.get("redirectTo")
-      await signIn(data.email, data.password)
+      console.log('Login - Starting sign in process')
+      
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
+      
+      if (signInError) throw signInError
+      
+      console.log('Login - Sign in successful, checking session')
+      const { data: { user } } = await supabase.auth.getUser()
+      console.log('Login - User data:', {
+        id: user?.id,
+        email: user?.email,
+        metadata: user?.user_metadata,
+        role: user?.user_metadata?.role
+      })
       
       // Check if user is trying to access admin routes
       if (redirectTo?.startsWith('/admin')) {
-        const { data: { user } } = await supabase.auth.getUser()
-        const userRole = user?.user_metadata.role
+        const userRole = user?.user_metadata?.role
+        console.log('Login - Checking admin access:', {
+          redirectTo,
+          userRole,
+          hasMetadata: !!user?.user_metadata
+        })
         
         if (userRole !== 'admin') {
+          console.log('Login - Access denied: not an admin')
           toast.error("Access denied", {
             description: "You do not have permission to access the admin area.",
           })
@@ -80,6 +101,7 @@ export default function LoginPage() {
         }
       }
       
+      console.log('Login - Redirecting to:', redirectTo || "/dashboard")
       router.push(redirectTo || "/dashboard")
       toast.success("Welcome back!", {
         description: "Successfully signed in to your account.",
