@@ -3,12 +3,12 @@ CREATE OR REPLACE FUNCTION set_admin_role(user_id UUID)
 RETURNS void AS $$
 BEGIN
   UPDATE auth.users
-  SET raw_app_meta_data = 
+  SET raw_user_meta_data = 
     CASE 
-      WHEN raw_app_meta_data IS NULL THEN 
+      WHEN raw_user_meta_data IS NULL THEN 
         jsonb_build_object('role', 'admin')
       ELSE 
-        raw_app_meta_data || jsonb_build_object('role', 'admin')
+        raw_user_meta_data || jsonb_build_object('role', 'admin')
     END
   WHERE id = user_id;
 END;
