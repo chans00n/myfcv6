@@ -9,18 +9,21 @@ const FavoritesProvider = dynamic(() => import("@/context/favorites-context").th
 const MobileNavWrapper = dynamic(() => import("@/components/mobile-nav-wrapper").then(mod => mod.MobileNavWrapper), { ssr: false })
 const PWAInitializer = dynamic(() => import("./pwa-init").then(mod => mod.PWAInitializer), { ssr: false })
 const PWAInstallPrompt = dynamic(() => import("@/components/pwa-install-prompt").then(mod => mod.PWAInstallPrompt), { ssr: false })
+const AuthProvider = dynamic(() => import("@/context/auth-context").then(mod => mod.AuthProvider), { ssr: false })
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider defaultTheme="dark">
-      <SidebarProvider>
-        <FavoritesProvider>
-          <PWAInitializer />
-          {children}
-          <MobileNavWrapper />
-          <PWAInstallPrompt />
-        </FavoritesProvider>
-      </SidebarProvider>
+      <AuthProvider>
+        <SidebarProvider>
+          <FavoritesProvider>
+            <PWAInitializer />
+            {children}
+            <MobileNavWrapper />
+            <PWAInstallPrompt />
+          </FavoritesProvider>
+        </SidebarProvider>
+      </AuthProvider>
     </ThemeProvider>
   )
 } 

@@ -7,12 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -25,6 +27,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>
 export default function LoginClientPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const { signIn } = useAuth()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -38,16 +41,16 @@ export default function LoginClientPage() {
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true)
 
-    // Simulate API call
-    console.log(data)
-
-    // Simulate delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    setIsLoading(false)
-
-    // Redirect to dashboard after successful login
-    router.push("/dashboard")
+    try {
+      await signIn(data.email, data.password)
+      router.push("/dashboard")
+      toast.success("Successfully signed in!")
+    } catch (error) {
+      console.error("Login error:", error)
+      toast.error("Failed to sign in. Please check your credentials.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

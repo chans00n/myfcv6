@@ -7,12 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
 
 const signupFormSchema = z
   .object({
@@ -34,6 +36,7 @@ type SignupFormValues = z.infer<typeof signupFormSchema>
 export default function SignupPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const { signUp } = useAuth()
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
@@ -49,16 +52,16 @@ export default function SignupPage() {
   async function onSubmit(data: SignupFormValues) {
     setIsLoading(true)
 
-    // Simulate API call
-    console.log(data)
-
-    // Simulate delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    setIsLoading(false)
-
-    // Redirect to dashboard after successful signup
-    router.push("/dashboard")
+    try {
+      await signUp(data.email, data.password)
+      toast.success("Account created successfully! Please check your email to verify your account.")
+      router.push("/auth/login")
+    } catch (error) {
+      console.error("Signup error:", error)
+      toast.error("Failed to create account. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
