@@ -40,7 +40,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const {
           data: { subscription },
         } = supabase.auth.onAuthStateChange(async (event, session) => {
-          setUser(session?.user ?? null)
+          const previousUser = user
+          const currentUser = session?.user ?? null
+          setUser(currentUser)
           setLoading(false)
 
           if (event === "SIGNED_IN") {
@@ -56,9 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }),
             })
 
-            // Handle redirect after sign in
-            const redirectTo = searchParams.get('redirectTo') || '/dashboard'
-            if (pathname.startsWith("/auth/")) {
+            // Only redirect if this is an initial sign in, not a metadata update
+            if (!previousUser && currentUser && pathname.startsWith("/auth/")) {
+              const redirectTo = searchParams.get('redirectTo') || '/dashboard'
               router.push(redirectTo)
               router.refresh()
             }
@@ -84,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initializeAuth()
-  }, [supabase, router, pathname, searchParams])
+  }, [router, pathname, searchParams])
 
   const signIn = async (email: string, password: string, redirectTo: string = "/dashboard") => {
     try {
