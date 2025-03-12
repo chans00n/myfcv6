@@ -14,28 +14,50 @@ export type Profile = {
   updated_at: string
 }
 
+// Create a singleton instance of the Supabase client
+const supabase = createClientComponentClient()
+
 export function useProfile() {
   const { user } = useAuth()
-  const supabase = createClientComponentClient()
 
   const getProfile = useCallback(async () => {
     try {
-      if (!user?.id) throw new Error("User not found")
+      if (!user?.id) return null
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select()
         .eq("id", user.id)
         .single()
 
-      if (error) throw error
+      if (error) {
+        if (error.code === "PGRST116") {
+          // Record not found - create a new profile
+          const { data: newProfile, error: createError } = await supabase
+            .from("profiles")
+            .insert([
+              {
+                id: user.id,
+                name: user.user_metadata?.name || user.email?.split("@")[0] || "",
+                avatar_url: user.user_metadata?.avatar_url || null,
+              },
+            ])
+            .select()
+            .single()
+
+          if (createError) throw createError
+          return newProfile as Profile
+        }
+        throw error
+      }
+
       return data as Profile
     } catch (error) {
       console.error("Error fetching profile:", error)
       toast.error("Failed to fetch profile")
       return null
     }
-  }, [user, supabase])
+  }, [user])
 
   const updateProfile = useCallback(
     async (updates: Partial<Profile>) => {
@@ -44,7 +66,10 @@ export function useProfile() {
 
         const { error } = await supabase
           .from("profiles")
-          .update(updates)
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", user.id)
 
         if (error) throw error
@@ -56,7 +81,7 @@ export function useProfile() {
         return false
       }
     },
-    [user, supabase]
+    [user]
   )
 
   return {
