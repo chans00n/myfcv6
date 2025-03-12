@@ -6,9 +6,12 @@ import type { NextRequest } from 'next/server'
 const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
 
 export async function middleware(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-url', request.url)
+
   let response = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: requestHeaders,
     },
   })
 
@@ -21,14 +24,11 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          // If we're on a public route, allow setting cookies
-          if (publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            })
-          }
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
         },
         remove(name: string, options: CookieOptions) {
           response.cookies.set({

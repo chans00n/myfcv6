@@ -7,6 +7,11 @@ export async function POST(request: Request) {
   const { event, session } = await request.json()
 
   if (event === 'SIGNED_IN') {
+    const response = new NextResponse(JSON.stringify({ message: 'Cookie set' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -16,18 +21,26 @@ export async function POST(request: Request) {
             return cookieStore.get(name)?.value
           },
           set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
           },
           remove(name: string, options: CookieOptions) {
-            cookieStore.delete({ name, ...options })
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
           },
         },
       }
     )
 
-    // Set the auth cookie
     await supabase.auth.setSession(session)
+    return response
   }
 
-  return NextResponse.json({ message: 'Cookie set' })
+  return NextResponse.json({ message: 'No action taken' })
 } 

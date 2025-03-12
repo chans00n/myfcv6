@@ -4,6 +4,10 @@ import { NextResponse } from 'next/server'
 
 export async function POST() {
   const cookieStore = cookies()
+  const response = new NextResponse(JSON.stringify({ message: 'Cookie cleared' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,10 +18,18 @@ export async function POST() {
           return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
         },
         remove(name: string, options: CookieOptions) {
-          cookieStore.delete({ name, ...options })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
         },
       },
     }
@@ -25,6 +37,5 @@ export async function POST() {
 
   // Clear the session
   await supabase.auth.signOut()
-
-  return NextResponse.json({ message: 'Cookie cleared' })
+  return response
 } 
