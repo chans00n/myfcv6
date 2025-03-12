@@ -2,8 +2,11 @@
 
 import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Moon, Sun } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useTheme } from "@/components/theme-context"
 import { useState, useEffect } from "react"
+import { useAuth } from "@/context/auth-context"
+import { toast } from "sonner"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -28,6 +31,8 @@ export function NavUser({
     avatar: string
   }
 }) {
+  const router = useRouter()
+  const { signOut } = useAuth()
   const { isMobile, state } = useSidebar()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -84,6 +89,17 @@ export function NavUser({
       document.documentElement.style.setProperty("--sidebar-accent", "65 70% 92%")
       document.documentElement.style.setProperty("--sidebar-accent-foreground", "65 10% 15%")
       document.documentElement.style.setProperty("--sidebar-border", "65 10% 90%")
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      toast.success("Signed out successfully")
+      router.push("/auth/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast.error("Failed to sign out")
     }
   }
 
@@ -177,7 +193,7 @@ export function NavUser({
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </DropdownMenuItem>
@@ -266,7 +282,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>

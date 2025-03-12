@@ -14,6 +14,7 @@ import {
   Settings,
   Heart,
 } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 import { NavMain } from "./nav-main"
 // NavCalendar removed as requested
@@ -24,11 +25,6 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Acme Inc",
@@ -129,6 +125,14 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth()
+  
+  const userData = {
+    name: user?.user_metadata?.name || user?.email?.split('@')[0] || 'User',
+    email: user?.email || '',
+    avatar: user?.user_metadata?.avatar_url || '',
+  }
+
   return (
     <TooltipProvider>
       <Sidebar collapsible="icon" className="hidden md:block" {...props}>
@@ -139,7 +143,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavMain items={data.navMain} />
         </SidebarContent>
         <SidebarFooter>
-          <NavUser user={data.user} />
+          <NavUser user={userData} />
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
