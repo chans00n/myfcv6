@@ -1,33 +1,28 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { type Database } from "@/types/supabase"
+import { getSupabaseBrowserClient } from "./client"
 
-export async function uploadFile(
-  file: File,
-  bucket: string = "workout-media",
-  folder: string = "covers"
-) {
-  const supabase = createClientComponentClient<Database>()
+export async function uploadFile(file: File) {
+  const supabase = getSupabaseBrowserClient()
+  
+  // Generate a unique file name
   const fileExt = file.name.split(".").pop()
-  const fileName = `${crypto.randomUUID()}.${fileExt}`
-  const filePath = `${folder}/${fileName}`
-
+  const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+  
+  // Upload the file
   const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-    })
-
+    .from("workout-media")
+    .upload(fileName, file)
+    
   if (error) {
-    throw new Error(`Failed to upload file: ${error.message}`)
+    throw error
   }
-
+  
+  // Get the public URL
   const { data: { publicUrl } } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(filePath)
-
+    .from("workout-media")
+    .getPublicUrl(data.path)
+    
   return {
     path: data.path,
-    url: publicUrl,
+    url: publicUrl
   }
 } 

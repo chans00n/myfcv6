@@ -1,8 +1,9 @@
 "use client"
 
-import * as React from "react"
-import { DragHandleDots2Icon } from "@radix-ui/react-icons"
+import { useState } from "react"
+import { nanoid } from "nanoid"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { uploadFile } from "@/lib/supabase/upload"
@@ -13,14 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  type DropResult,
-} from "@hello-pangea/dnd"
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
+import { GripVertical, Plus, Trash2 } from "lucide-react"
 
-export type ContentBlock = {
+export interface ContentBlock {
   id: string
   type: "text" | "image" | "video"
   content: string
@@ -28,87 +25,68 @@ export type ContentBlock = {
 }
 
 interface ContentBlockEditorProps {
-  blocks: ContentBlock[]
-  onChange: (blocks: ContentBlock[]) => void
+  value: ContentBlock[]
+  onChange: (value: ContentBlock[]) => void
   disabled?: boolean
 }
 
 export function ContentBlockEditor({
-  blocks,
+  value,
   onChange,
-  disabled,
+  disabled
 }: ContentBlockEditorProps) {
-  const addBlock = (type: ContentBlock["type"]) => {
+  const [blocks, setBlocks] = useState<ContentBlock[]>(value || [])
+
+  const addBlock = () => {
     const newBlock: ContentBlock = {
-      id: crypto.randomUUID(),
-      type,
+      id: nanoid(),
+      type: "text",
       content: "",
-      order: blocks.length,
+      order: blocks.length
     }
-    onChange([...blocks, newBlock])
+    const updatedBlocks = [...blocks, newBlock]
+    setBlocks(updatedBlocks)
+    onChange(updatedBlocks)
   }
 
   const updateBlock = (id: string, updates: Partial<ContentBlock>) => {
-    onChange(
-      blocks.map((block) =>
-        block.id === id ? { ...block, ...updates } : block
-      )
+    const updatedBlocks = blocks.map(block =>
+      block.id === id ? { ...block, ...updates } : block
     )
+    setBlocks(updatedBlocks)
+    onChange(updatedBlocks)
   }
 
   const removeBlock = (id: string) => {
-    onChange(blocks.filter((block) => block.id !== id))
+    const updatedBlocks = blocks
+      .filter(block => block.id !== id)
+      .map((block, index) => ({ ...block, order: index }))
+    setBlocks(updatedBlocks)
+    onChange(updatedBlocks)
   }
 
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = (result: any) => {
     if (!result.destination) return
 
     const items = Array.from(blocks)
     const [reorderedItem] = items.splice(result.source.index, 1)
     items.splice(result.destination.index, 0, reorderedItem)
 
-    // Update order numbers
-    const updatedItems = items.map((item, index) => ({
+    const updatedBlocks = items.map((item, index) => ({
       ...item,
-      order: index,
+      order: index
     }))
-
-    onChange(updatedItems)
+    setBlocks(updatedBlocks)
+    onChange(updatedBlocks)
   }
 
-  const handleImageUpload = async (file: File) => {
-    return uploadFile(file, "workout-media", "content")
+  const handleUpload = async (file: File) => {
+    const result = await uploadFile(file)
+    return result.url
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => addBlock("text")}
-          disabled={disabled}
-        >
-          Add Text
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => addBlock("image")}
-          disabled={disabled}
-        >
-          Add Image
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => addBlock("video")}
-          disabled={disabled}
-        >
-          Add Video
-        </Button>
-      </div>
-
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="blocks">
           {(provided) => (
@@ -117,96 +95,101 @@ export function ContentBlockEditor({
               ref={provided.innerRef}
               className="space-y-4"
             >
-              {blocks
-                .sort((a, b) => a.order - b.order)
-                .map((block, index) => (
-                  <Draggable
-                    key={block.id}
-                    draggableId={block.id}
-                    index={index}
-                  >
-                    {(provided) => (
+              {blocks.map((block, index) => (
+                <Draggable
+                  key={block.id}
+                  draggableId={block.id}
+                  index={index}
+                >
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className="flex items-start gap-4 rounded-lg border p-4"
+                    >
                       <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className="flex items-start gap-2 rounded-lg border p-4"
+                        {...provided.dragHandleProps}
+                        className="mt-3 cursor-move"
                       >
-                        <div
-                          {...provided.dragHandleProps}
-                          className="mt-3 cursor-move"
-                        >
-                          <DragHandleDots2Icon className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Select
-                            value={block.type}
-                            onValueChange={(value: ContentBlock["type"]) =>
-                              updateBlock(block.id, { type: value })
-                            }
-                            disabled={disabled}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">Text</SelectItem>
-                              <SelectItem value="image">Image</SelectItem>
-                              <SelectItem value="video">Video</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {block.type === "text" && (
-                            <Textarea
-                              value={block.content}
-                              onChange={(e) =>
-                                updateBlock(block.id, {
-                                  content: e.target.value,
-                                })
-                              }
-                              placeholder="Enter text content..."
-                              disabled={disabled}
-                            />
-                          )}
-                          {block.type === "image" && (
-                            <ImageUpload
-                              value={block.content}
-                              onChange={(url) =>
-                                updateBlock(block.id, { content: url })
-                              }
-                              onUpload={handleImageUpload}
-                              disabled={disabled}
-                            />
-                          )}
-                          {block.type === "video" && (
-                            <Textarea
-                              value={block.content}
-                              onChange={(e) =>
-                                updateBlock(block.id, {
-                                  content: e.target.value,
-                                })
-                              }
-                              placeholder="Enter video URL..."
-                              disabled={disabled}
-                            />
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeBlock(block.id)}
+                        <GripVertical className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 space-y-4">
+                        <Select
+                          value={block.type}
+                          onValueChange={(value: "text" | "image" | "video") =>
+                            updateBlock(block.id, { type: value })
+                          }
                           disabled={disabled}
                         >
-                          ✕
-                        </Button>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select block type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Text</SelectItem>
+                            <SelectItem value="image">Image</SelectItem>
+                            <SelectItem value="video">Video</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {block.type === "text" && (
+                          <Textarea
+                            value={block.content}
+                            onChange={(e) =>
+                              updateBlock(block.id, { content: e.target.value })
+                            }
+                            placeholder="Enter text content..."
+                            disabled={disabled}
+                          />
+                        )}
+                        {block.type === "image" && (
+                          <ImageUpload
+                            value={block.content}
+                            onChange={(url) =>
+                              updateBlock(block.id, { content: url })
+                            }
+                            onUpload={handleUpload}
+                            disabled={disabled}
+                          />
+                        )}
+                        {block.type === "video" && (
+                          <Input
+                            type="url"
+                            value={block.content}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              updateBlock(block.id, { content: e.target.value })
+                            }
+                            placeholder="Enter video URL..."
+                            disabled={disabled}
+                          />
+                        )}
                       </div>
-                    )}
-                  </Draggable>
-                ))}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeBlock(block.id)}
+                        disabled={disabled}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
               {provided.placeholder}
             </div>
           )}
         </Droppable>
       </DragDropContext>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={addBlock}
+        disabled={disabled}
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Add Block
+      </Button>
     </div>
   )
 } 
