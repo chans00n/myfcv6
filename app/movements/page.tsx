@@ -1,8 +1,8 @@
-import ClientWrapper from "./client-wrapper"
+import DynamicWrapper from "./dynamic-wrapper"
 
 export const dynamic = "force-static"
 
 export default function MovementsPage() {
-  return <ClientWrapper />
+  return <DynamicWrapper />
 }
 
