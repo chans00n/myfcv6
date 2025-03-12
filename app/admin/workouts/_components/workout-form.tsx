@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { ContentBlockEditor, type ContentBlock } from "./content-block-editor"
 import { createWorkout, updateWorkout } from "@/app/actions/workouts"
 import { uploadFile } from "@/lib/supabase/upload"
 import { Database } from "@/types/supabase"
@@ -40,6 +41,14 @@ const workoutSchema = z.object({
   difficulty: z.custom<WorkoutDifficulty>(),
   duration: z.number().min(1, "Duration must be at least 1 minute"),
   cover_image: z.string().optional(),
+  content_blocks: z.array(
+    z.object({
+      id: z.string(),
+      type: z.enum(["text", "image", "video"]),
+      content: z.string(),
+      order: z.number(),
+    })
+  ),
 })
 
 type WorkoutFormValues = z.infer<typeof workoutSchema>
@@ -61,6 +70,7 @@ export function WorkoutForm({ workout }: WorkoutFormProps) {
       difficulty: workout?.difficulty || "basic",
       duration: workout?.duration || 30,
       cover_image: workout?.cover_image || "",
+      content_blocks: workout?.workout_content_blocks || [],
     },
   })
 
@@ -226,6 +236,27 @@ export function WorkoutForm({ workout }: WorkoutFormProps) {
               </FormControl>
               <FormDescription>
                 Upload an image that represents this workout.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="content_blocks"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Content Blocks</FormLabel>
+              <FormControl>
+                <ContentBlockEditor
+                  blocks={field.value}
+                  onChange={field.onChange}
+                  disabled={isLoading}
+                />
+              </FormControl>
+              <FormDescription>
+                Add and arrange content blocks for your workout instructions.
               </FormDescription>
               <FormMessage />
             </FormItem>

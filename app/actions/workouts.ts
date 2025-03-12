@@ -6,6 +6,12 @@ import { Database } from "@/types/supabase"
 
 type Workout = Database["public"]["Tables"]["workouts"]["Insert"]
 type WorkoutUpdate = Database["public"]["Tables"]["workouts"]["Update"]
+type ContentBlock = {
+  id: string
+  type: "text" | "image" | "video"
+  content: string
+  order: number
+}
 
 export async function getWorkouts() {
   const supabase = createServerClient()
@@ -64,45 +70,112 @@ export async function getWorkout(id: string) {
   return workout
 }
 
-export async function createWorkout(workout: Workout) {
+export async function createWorkout(data: Workout & { content_blocks?: ContentBlock[] }) {
   const supabase = createServerClient()
+  const { content_blocks, ...workoutData } = data
 
-  const { data, error } = await supabase
+  // Create the workout
+  const { data: workout, error: workoutError } = await supabase
     .from("workouts")
-    .insert(workout)
+    .insert(workoutData)
     .select()
     .single()
 
-  if (error) {
-    throw new Error(error.message)
+  if (workoutError) {
+    throw new Error(workoutError.message)
+  }
+
+  // Create content blocks if provided
+  if (content_blocks?.length) {
+    const { error: blocksError } = await supabase
+      .from("workout_content_blocks")
+      .insert(
+        content_blocks.map((block) => ({
+          workout_id: workout.id,
+          type: block.type,
+          content: block.content,
+          order: block.order,
+        }))
+      )
+
+    if (blocksError) {
+      throw new Error(blocksError.message)
+    }
   }
 
   revalidatePath("/admin/workouts")
-  return data
+  return workout
 }
 
-export async function updateWorkout(id: string, workout: WorkoutUpdate) {
+export async function updateWorkout(
+  id: string,
+  data: WorkoutUpdate & { content_blocks?: ContentBlock[] }
+) {
   const supabase = createServerClient()
+  const { content_blocks, ...workoutData } = data
 
-  const { data, error } = await supabase
+  // Update the workout
+  const { data: workout, error: workoutError } = await supabase
     .from("workouts")
-    .update(workout)
+    .update(workoutData)
     .eq("id", id)
     .select()
     .single()
 
-  if (error) {
-    throw new Error(error.message)
+  if (workoutError) {
+    throw new Error(workoutError.message)
+  }
+
+  // Update content blocks if provided
+  if (content_blocks) {
+    // Delete existing blocks
+    const { error: deleteError } = await supabase
+      .from("workout_content_blocks")
+      .delete()
+      .eq("workout_id", id)
+
+    if (deleteError) {
+      throw new Error(deleteError.message)
+    }
+
+    // Insert new blocks
+    if (content_blocks.length) {
+      const { error: blocksError } = await supabase
+        .from("workout_content_blocks")
+        .insert(
+          content_blocks.map((block) => ({
+            workout_id: id,
+            type: block.type,
+            content: block.content,
+            order: block.order,
+          }))
+        )
+
+      if (blocksError) {
+        throw new Error(blocksError.message)
+      }
+    }
   }
 
   revalidatePath("/admin/workouts")
   revalidatePath(`/admin/workouts/${id}`)
-  return data
+  return workout
 }
 
 export async function deleteWorkout(id: string) {
   const supabase = createServerClient()
 
+  // Delete content blocks first (due to foreign key constraint)
+  const { error: blocksError } = await supabase
+    .from("workout_content_blocks")
+    .delete()
+    .eq("workout_id", id)
+
+  if (blocksError) {
+    throw new Error(blocksError.message)
+  }
+
+  // Delete the workout
   const { error } = await supabase
     .from("workouts")
     .delete()
