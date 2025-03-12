@@ -58,11 +58,11 @@ export default function LoginClientPage() {
     setIsLoading(true)
 
     try {
-      await signIn(data.email, data.password)
+      const redirectTo = searchParams.get("redirectTo") || "/dashboard"
+      await signIn(data.email, data.password, redirectTo)
       toast.success("Welcome back!", {
         description: "Successfully signed in to your account.",
       })
-      router.push("/dashboard")
     } catch (error: any) {
       console.error("Login error:", error)
       if (error?.message?.toLowerCase().includes("email not confirmed")) {
