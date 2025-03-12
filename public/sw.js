@@ -83,7 +83,7 @@ self.addEventListener("fetch", (event) => {
           }
 
           // For other resources, just fail
-          return new Response("Network error", {
+          return new Response("Network error, please try again later.", {
             status: 408,
             headers: { "Content-Type": "text/plain" },
           })
