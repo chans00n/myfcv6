@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server'
 
 // List of public routes that don't require authentication
 const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
+const adminRoutes = ['/admin', '/admin/workouts', '/admin/videos', '/admin/users', '/admin/settings']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -53,6 +54,30 @@ export async function middleware(request: NextRequest) {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     const pathname = request.nextUrl.pathname
+
+    // Check for admin routes
+    if (adminRoutes.some(route => pathname.startsWith(route))) {
+      if (!session) {
+        const redirectUrl = new URL('/auth/login', request.url)
+        redirectUrl.searchParams.set('redirectTo', pathname)
+        return NextResponse.redirect(redirectUrl)
+      }
+
+      // Debug log
+      console.log('Session user:', {
+        metadata: session.user.user_metadata,
+        role: session.user.user_metadata?.role
+      })
+
+      // Check if user has admin role
+      const userRole = session.user.user_metadata?.role
+      if (userRole !== 'admin') {
+        console.log('User role not admin:', userRole)
+        return NextResponse.redirect(new URL('/', request.url))
+      }
+
+      return response
+    }
 
     // If there's no session and trying to access a protected route
     if (!session) {
