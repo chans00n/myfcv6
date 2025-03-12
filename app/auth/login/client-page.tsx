@@ -72,11 +72,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-full max-w-md">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4 pt-6">
+    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+      <div className="flex flex-col space-y-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">Enter your credentials to sign in to your account</p>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -84,7 +89,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
+                      <Input placeholder="name@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -97,26 +102,31 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Enter your password" {...field} />
+                      <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="rememberMe"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel className="text-sm font-normal">Remember me</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+              <div className="flex items-center justify-between">
+                <FormField
+                  control={form.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Remember me
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <Link href="/auth/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
@@ -127,15 +137,17 @@ export default function LoginPage() {
                   "Sign in"
                 )}
               </Button>
-              <div className="text-sm text-muted-foreground">
-                Don&apos;t have an account?{" "}
-                <Link href="/auth/signup" className="text-primary hover:underline">
-                  Sign up
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
-        </Form>
+            </form>
+          </Form>
+        </CardContent>
+        <CardFooter className="flex flex-col">
+          <div className="mt-2 text-center text-sm">
+            Don&apos;t have an account?{" "}
+            <Link href="/auth/signup" className="font-medium text-primary hover:underline">
+              Sign up
+            </Link>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   )

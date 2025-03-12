@@ -18,9 +18,12 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          return request.cookies.get(name)?.value
+          const cookie = request.cookies.get(name)?.value
+          // Don't decode the cookie value - let Supabase handle it
+          return cookie
         },
         set(name: string, value: string, options: CookieOptions) {
+          // Don't try to parse or modify the cookie value - let Supabase handle it
           response.cookies.set({
             name,
             value,
