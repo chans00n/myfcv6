@@ -27,22 +27,15 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/placeholder-logo.png",
-        sizes: "196x196",
+        url: "/icon.png",
+        sizes: "32x32",
         type: "image/png",
       }
     ],
     apple: [
       {
-        url: "/placeholder-logo.png",
+        url: "/apple-icon.png",
         sizes: "180x180",
-        type: "image/png",
-      }
-    ],
-    shortcut: [
-      {
-        url: "/placeholder-logo.png",
-        sizes: "32x32",
         type: "image/png",
       }
     ]
@@ -67,35 +60,10 @@ export default function RootLayout({
         />
 
         {/* Favicon */}
-        <link
-          rel="icon"
-          href="/placeholder-logo.png"
-        />
-        <link
-          rel="shortcut icon"
-          href="/placeholder-logo.png"
-        />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
 
         {/* iOS icons */}
-        <link
-          rel="apple-touch-icon"
-          href="/placeholder-logo.png"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="152x152"
-          href="/AppIcon.appiconset/152.png"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="167x167"
-          href="/AppIcon.appiconset/167.png"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="120x120"
-          href="/AppIcon.appiconset/120.png"
-        />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
 
         <style>{`
           :root {

@@ -1,20 +1,21 @@
 {
-  "name": "MYFC - My Facial Coach",
+  "name": "MYFC",
   "short_name": "MYFC",
-  "description": "Facial fitness workouts and exercises to tone and rejuvenate your facial muscles",
-  "start_url": "/?source=pwa",
-  "id": "/?source=pwa",
+  "description": "MYFC Dashboard Application",
+  "start_url": "/",
   "display": "standalone",
-  "display_override": ["fullscreen", "standalone"],
-  "orientation": "portrait",
-  "background_color": "#a4b61a",
+  "background_color": "#000000",
   "theme_color": "#a4b61a",
   "icons": [
     {
-      "src": "/placeholder-logo.png",
-      "sizes": "196x196",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/icon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ]
 }
