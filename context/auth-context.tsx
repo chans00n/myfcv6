@@ -11,6 +11,11 @@ type User = SupabaseUser & {
     role?: string
     full_name?: string
   }
+  app_metadata: {
+    role?: string
+    provider?: string
+    providers?: string[]
+  }
 }
 
 type AuthContextType = {

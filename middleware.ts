@@ -79,18 +79,23 @@ export async function middleware(request: NextRequest) {
       console.log('Middleware - Session user details:', {
         id: session.user.id,
         email: session.user.email,
-        metadata: session.user.user_metadata,
-        rawMetadata: JSON.stringify(session.user.user_metadata),
-        role: session.user.user_metadata?.role
+        userMetadata: session.user.user_metadata,
+        appMetadata: session.user.app_metadata,
+        userRole: session.user.user_metadata?.role,
+        appRole: session.user.app_metadata?.role
       })
 
-      // Check if user has admin role
-      const userRole = session.user.user_metadata?.role
-      if (userRole !== 'admin') {
-        console.log('Middleware - User role not admin:', {
-          userRole,
-          metadataType: typeof session.user.user_metadata,
-          hasMetadata: !!session.user.user_metadata
+      // Check for admin role in either metadata location
+      const isAdmin = 
+        session.user.app_metadata?.role === 'admin' || 
+        session.user.user_metadata?.role === 'admin'
+
+      if (!isAdmin) {
+        console.log('Middleware - User is not admin:', {
+          userMetadataRole: session.user.user_metadata?.role,
+          appMetadataRole: session.user.app_metadata?.role,
+          hasUserMetadata: !!session.user.user_metadata,
+          hasAppMetadata: !!session.user.app_metadata
         })
         return NextResponse.redirect(new URL('/', request.url))
       }
