@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Camera, Loader2, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
+import { useProfile, type Profile } from "@/hooks/use-profile"
 import { toast } from "sonner"
 import React from "react"
 
@@ -26,54 +27,79 @@ const profileFormSchema = z.object({
     github: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal("")),
     linkedin: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal("")),
   }),
-  marketing_emails: z.boolean().default(false),
-  security_emails: z.boolean().default(true),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-const defaultValues: Partial<ProfileFormValues> = {
-  name: "shadcn",
-  email: "m@example.com",
-  bio: "I'm a software developer based in London, UK. I'm passionate about building products that are accessible, inclusive, and user-friendly.",
-  urls: {
-    twitter: "https://twitter.com/shadcn",
-    github: "https://github.com/shadcn",
-    linkedin: "https://linkedin.com/in/shadcn",
-  },
-  marketing_emails: true,
-  security_emails: true,
-}
-
 export function AccountSettings() {
   const [isLoading, setIsLoading] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const router = useRouter()
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
+  const { getProfile, updateProfile } = useProfile()
 
   // Add a reference to the form for scrolling
   const formRef = React.useRef<HTMLFormElement>(null)
 
-  // Scroll to form on mount
-  React.useEffect(() => {
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+  // Fetch profile data on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const data = await getProfile()
+      if (data) {
+        setProfile(data)
+        // Update form with profile data
+        form.reset({
+          name: data.name || "",
+          email: user?.email || "",
+          bio: data.bio || "",
+          urls: {
+            twitter: data.twitter_url || "",
+            github: data.github_url || "",
+            linkedin: data.linkedin_url || "",
+          },
+        })
+      }
     }
-  }, [])
+    fetchProfile()
+  }, [getProfile, user])
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues,
+    defaultValues: {
+      name: "",
+      email: "",
+      bio: "",
+      urls: {
+        twitter: "",
+        github: "",
+        linkedin: "",
+      },
+    },
     mode: "onChange",
   })
 
-  function onSubmit(data: ProfileFormValues) {
+  async function onSubmit(data: ProfileFormValues) {
     setIsLoading(true)
+    try {
+      const success = await updateProfile({
+        name: data.name,
+        bio: data.bio || null,
+        twitter_url: data.urls.twitter || null,
+        github_url: data.urls.github || null,
+        linkedin_url: data.urls.linkedin || null,
+      })
 
-    // Simulate API call
-    setTimeout(() => {
-      console.log(data)
+      if (success) {
+        const updatedProfile = await getProfile()
+        if (updatedProfile) {
+          setProfile(updatedProfile)
+        }
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error)
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   const handleLogout = async () => {
@@ -97,8 +123,13 @@ export function AccountSettings() {
         <CardContent>
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src="/avatars/shadcn.jpg" alt="shadcn" />
-              <AvatarFallback>CN</AvatarFallback>
+              <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || ""} />
+              <AvatarFallback>
+                {profile?.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("") || user?.email?.[0].toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
               <Button variant="outline" size="sm" className="w-fit">
@@ -140,7 +171,7 @@ export function AccountSettings() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="Your email" {...field} />
+                        <Input placeholder="Your email" disabled {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
