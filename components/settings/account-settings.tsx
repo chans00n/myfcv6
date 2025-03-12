@@ -144,9 +144,19 @@ export function AccountSettings() {
 
     setIsUploading(true)
     try {
-      // Upload to Supabase Storage
+      // Delete old avatar if it exists
+      if (profile?.avatar_url) {
+        const oldFilePath = profile.avatar_url.split('/').pop()
+        if (oldFilePath) {
+          await supabase.storage
+            .from('avatars')
+            .remove([`${user.id}/${oldFilePath}`])
+        }
+      }
+
+      // Upload to Supabase Storage in user-specific folder
       const fileExt = file.name.split(".").pop()
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(fileName, file)
