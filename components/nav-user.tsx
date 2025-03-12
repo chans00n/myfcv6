@@ -8,7 +8,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/context/auth-context"
 import { toast } from "sonner"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,7 +108,19 @@ export function NavUser({
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" className="justify-center p-2 h-auto">
-            <div className="h-6 w-6 rounded-full bg-sidebar-accent/20"></div>
+            <Avatar className="h-6 w-6 rounded-full">
+              <AvatarImage 
+                src={user.avatar} 
+                alt={user.name}
+                className="object-cover"
+              />
+              <AvatarFallback className="text-xs">
+                {user.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
+              </AvatarFallback>
+            </Avatar>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
@@ -127,6 +139,11 @@ export function NavUser({
                   <DropdownMenuTrigger asChild>
                     <SidebarMenuButton size="lg" className="justify-center p-2 h-auto">
                       <Avatar className="h-6 w-6 rounded-full">
+                        <AvatarImage 
+                          src={user.avatar} 
+                          alt={user.name}
+                          className="object-cover"
+                        />
                         <AvatarFallback className="text-xs">
                           {user.name
                             .split(" ")
@@ -150,6 +167,11 @@ export function NavUser({
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage 
+                        src={user.avatar} 
+                        alt={user.name}
+                        className="object-cover"
+                      />
                       <AvatarFallback className="rounded-lg">
                         {user.name
                           .split(" ")
@@ -216,6 +238,11 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage 
+                  src={user.avatar} 
+                  alt={user.name}
+                  className="object-cover"
+                />
                 <AvatarFallback className="rounded-lg">
                   {user.name
                     .split(" ")
@@ -239,6 +266,11 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage 
+                    src={user.avatar} 
+                    alt={user.name}
+                    className="object-cover"
+                  />
                   <AvatarFallback className="rounded-lg">
                     {user.name
                       .split(" ")

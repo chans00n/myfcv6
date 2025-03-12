@@ -15,6 +15,8 @@ import {
   Heart,
 } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useProfile } from "@/hooks/use-profile"
+import { useEffect, useState } from "react"
 
 import { NavMain } from "./nav-main"
 // NavCalendar removed as requested
@@ -126,11 +128,23 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
+  const { getProfile } = useProfile()
+  const [profile, setProfile] = useState<{ name: string | null; avatar_url: string | null } | null>(null)
   
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const profileData = await getProfile()
+      if (profileData) {
+        setProfile(profileData)
+      }
+    }
+    fetchProfile()
+  }, [getProfile])
+
   const userData = {
-    name: user?.user_metadata?.name || user?.email?.split('@')[0] || 'User',
+    name: profile?.name || user?.email?.split('@')[0] || 'User',
     email: user?.email || '',
-    avatar: user?.user_metadata?.avatar_url || '',
+    avatar: profile?.avatar_url || '',
   }
 
   return (
