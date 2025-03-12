@@ -35,6 +35,7 @@ const LoadingFallback = () => (
 
 const ClientPage = dynamicImport(() => import("./client-page"), {
   loading: LoadingFallback,
+  ssr: false
 })
 
 export default function MovementsPage() {
