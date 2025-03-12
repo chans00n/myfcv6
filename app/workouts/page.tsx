@@ -254,7 +254,7 @@ export default function WorkoutsPage() {
         {viewMode === "calendar" ? (
           <WeeklyWorkoutSchedule />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6">
             {filteredWorkouts.map((workout) => (
               <WorkoutCard key={workout.id} workout={workout} />
             ))}
