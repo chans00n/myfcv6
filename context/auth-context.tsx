@@ -33,6 +33,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         setUser(session?.user ?? null)
+        
+        // If we have a session and we're on an auth page, redirect to dashboard
+        if (session?.user && window.location.pathname.startsWith('/auth')) {
+          router.push('/dashboard')
+        }
+        // If we don't have a session and we're not on an auth page, redirect to login
+        else if (!session?.user && !window.location.pathname.startsWith('/auth')) {
+          router.push('/auth/login')
+        }
       } catch (error) {
         console.error('Error checking auth session:', error)
       } finally {
@@ -45,25 +54,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for changes on auth state (signed in, signed out, etc.)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null)
       setLoading(false)
+
+      // Handle auth state changes
+      if (event === 'SIGNED_IN') {
+        router.push('/dashboard')
+      } else if (event === 'SIGNED_OUT') {
+        router.push('/auth/login')
+      }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [])
+  }, [router])
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) throw error
-      router.push('/dashboard')
-      toast.success('Signed in successfully')
+      
+      if (data.session) {
+        setUser(data.session.user)
+        router.push('/dashboard')
+        toast.success('Signed in successfully')
+      }
     } catch (error) {
       console.error('Login error:', error)
       toast.error('Failed to sign in')
@@ -96,6 +116,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Logout error:', error)
       toast.error('Failed to sign out')
     }
+  }
+
+  // Don't render children until we've initialized auth
+  if (loading) {
+    return null // Or a loading spinner
   }
 
   return (

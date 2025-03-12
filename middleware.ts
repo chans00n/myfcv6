@@ -2,6 +2,9 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+// List of public routes that don't require authentication
+const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -35,21 +38,38 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const pathname = request.nextUrl.pathname
 
-  // If there's no session and the user is trying to access a protected route
-  if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
-    const redirectUrl = new URL('/auth/login', request.url)
-    return NextResponse.redirect(redirectUrl)
+    // If there's no session and trying to access a protected route
+    if (!session) {
+      if (!publicRoutes.includes(pathname) && !pathname.startsWith('/auth/')) {
+        const redirectUrl = new URL('/auth/login', request.url)
+        redirectUrl.searchParams.set('redirectTo', pathname)
+        return NextResponse.redirect(redirectUrl)
+      }
+      return response
+    }
+
+    // If there's a session and trying to access auth pages
+    if (session) {
+      if (pathname.startsWith('/auth/')) {
+        const redirectUrl = new URL('/dashboard', request.url)
+        return NextResponse.redirect(redirectUrl)
+      }
+    }
+
+    return response
+  } catch (error) {
+    console.error('Middleware error:', error)
+    // On error, redirect to login
+    if (!request.nextUrl.pathname.startsWith('/auth/')) {
+      const redirectUrl = new URL('/auth/login', request.url)
+      return NextResponse.redirect(redirectUrl)
+    }
+    return response
   }
-
-  // If there's a session and the user is on an auth page
-  if (session && request.nextUrl.pathname.startsWith('/auth')) {
-    const redirectUrl = new URL('/dashboard', request.url)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  return response
 }
 
 export const config = {
@@ -60,8 +80,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - auth related pages (/auth/*)
+     * - api routes
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|public|auth).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|public|api).*)',
   ],
 } 
