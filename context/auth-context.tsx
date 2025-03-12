@@ -1,12 +1,19 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
-import { createBrowserClient } from "@supabase/ssr"
+import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import type { User } from "@supabase/supabase-js"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/types/supabase"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
-interface AuthContextType {
+type User = SupabaseUser & {
+  user_metadata: {
+    role?: string
+    full_name?: string
+  }
+}
+
+type AuthContextType = {
   user: User | null
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, name: string) => Promise<void>
@@ -18,11 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
-
-  const supabase = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -50,8 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       throw error
     }
-
-    router.push("/dashboard")
   }
 
   const signUp = async (email: string, password: string, name: string) => {
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       throw error
     }
+    router.push("/auth/login")
   }
 
   return (

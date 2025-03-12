@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
-import { createBrowserClient } from "@supabase/ssr"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/types/supabase"
 import { toast } from "sonner"
 
@@ -26,16 +26,12 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>
 
-const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const { signIn } = useAuth()
+  const supabase = getSupabaseBrowserClient()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
