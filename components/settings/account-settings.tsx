@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -10,6 +10,8 @@ import { useAuth } from "@/context/auth-context"
 import { useProfile, type Profile } from "@/hooks/use-profile"
 import { toast } from "sonner"
 import React from "react"
+import { createBrowserClient } from '@supabase/ssr'
+import type { Database } from "@/types/supabase"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +19,12 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
+
+// Create a singleton instance of the Supabase client
+const supabase = createBrowserClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -33,10 +41,12 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 export function AccountSettings() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
   const router = useRouter()
   const { user, signOut } = useAuth()
   const { getProfile, updateProfile } = useProfile()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Add a reference to the form for scrolling
   const formRef = React.useRef<HTMLFormElement>(null)
@@ -81,7 +91,7 @@ export function AccountSettings() {
   async function onSubmit(data: ProfileFormValues) {
     setIsLoading(true)
     try {
-      const success = await updateProfile({
+      const updatedProfile = await updateProfile({
         name: data.name,
         bio: data.bio || null,
         twitter_url: data.urls.twitter || null,
@@ -89,14 +99,13 @@ export function AccountSettings() {
         linkedin_url: data.urls.linkedin || null,
       })
 
-      if (success) {
-        const updatedProfile = await getProfile()
-        if (updatedProfile) {
-          setProfile(updatedProfile)
-        }
+      if (updatedProfile) {
+        setProfile(updatedProfile)
+        toast.success("Profile updated successfully")
       }
     } catch (error) {
       console.error("Error updating profile:", error)
+      toast.error("Failed to update profile")
     } finally {
       setIsLoading(false)
     }
@@ -110,6 +119,59 @@ export function AccountSettings() {
     } catch (error) {
       console.error("Logout error:", error)
       toast.error("Failed to sign out")
+    }
+  }
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !user) return
+
+    // Check file size (3MB limit)
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("File size must be less than 3MB")
+      return
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("File must be an image")
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      // Upload to Supabase Storage
+      const fileExt = file.name.split(".").pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName)
+
+      // Update profile with new avatar URL
+      const updatedProfile = await updateProfile({
+        avatar_url: publicUrl
+      })
+
+      if (updatedProfile) {
+        setProfile(updatedProfile)
+        toast.success("Avatar updated successfully")
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      toast.error("Failed to update avatar")
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -132,9 +194,26 @@ export function AccountSettings() {
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
-              <Button variant="outline" size="sm" className="w-fit">
-                <Camera className="mr-2 h-4 w-4" />
-                Change avatar
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleAvatarChange}
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-fit"
+                onClick={handleAvatarClick}
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="mr-2 h-4 w-4" />
+                )}
+                {isUploading ? "Uploading..." : "Change avatar"}
               </Button>
               <p className="text-xs text-muted-foreground">JPG, GIF or PNG. Max size of 3MB.</p>
             </div>
