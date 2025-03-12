@@ -21,11 +21,14 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
+          // If we're on a public route, allow setting cookies
+          if (publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+          }
         },
         remove(name: string, options: CookieOptions) {
           response.cookies.set({

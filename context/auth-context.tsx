@@ -68,36 +68,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, router, pathname])
 
   const signIn = async (email: string, password: string, redirectTo: string = "/dashboard") => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error) {
+      if (error) throw error
+
+      if (data?.session) {
+        // Set the auth cookie
+        await fetch('/api/auth/set-auth-cookie', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            event: 'SIGNED_IN',
+            session: data.session,
+          }),
+        })
+
+        router.push(redirectTo)
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Sign in error:', error)
       throw error
     }
-
-    router.push(redirectTo)
-    router.refresh()
   }
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/login?verified=success`,
-      },
-    })
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/login?verified=success`,
+        },
+      })
 
-    if (error) {
+      if (error) throw error
+
+      toast.success('Verification email sent', {
+        description: 'Please check your email to verify your account.',
+      })
+    } catch (error) {
+      console.error('Sign up error:', error)
       throw error
     }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+
+      // Clear the auth cookie
+      await fetch('/api/auth/clear-auth-cookie', {
+        method: 'POST',
+      })
+
+      router.push('/auth/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Sign out error:', error)
       throw error
     }
   }
