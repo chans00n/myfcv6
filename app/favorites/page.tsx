@@ -1,3 +1,6 @@
+export const dynamic = "force-static"
+export const runtime = "edge"
+
 import { Suspense } from "react"
 import ClientWrapper from "./client-wrapper"
 
