@@ -1,7 +1,9 @@
--- Drop existing policies if they exist
+-- Drop existing objects
 drop policy if exists "Public profiles are viewable by everyone." on profiles;
 drop policy if exists "Users can insert their own profile." on profiles;
 drop policy if exists "Users can update their own profile." on profiles;
+drop trigger if exists on_auth_user_created on auth.users;
+drop function if exists handle_new_user();
 
 -- Create a table for public profiles
 create table if not exists public.profiles (
@@ -36,10 +38,10 @@ create policy "Users can update their own profile."
   using ( auth.uid() = id );
 
 -- Create a function to handle new user creation
-create or replace function public.handle_new_user()
+create function public.handle_new_user()
 returns trigger
 language plpgsql
-security definer set search_path = public
+security definer
 as $$
 begin
   insert into public.profiles (id, email, name)
@@ -52,13 +54,21 @@ begin
     )
   );
   return new;
+exception
+  when others then
+    -- Log the error (in a real application, you'd want proper error logging)
+    raise notice 'Error in handle_new_user: %', SQLERRM;
+    return new;
 end;
 $$;
-
--- Drop the trigger if it exists
-drop trigger if exists on_auth_user_created on auth.users;
 
 -- Create the trigger
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute function public.handle_new_user(); 
+  for each row
+  execute function public.handle_new_user();
+
+-- Grant necessary permissions
+grant usage on schema public to anon, authenticated;
+grant all on public.profiles to anon, authenticated;
+grant usage on sequence public.profiles_id_seq to anon, authenticated; 
