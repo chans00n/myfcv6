@@ -1,5 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "MYFC - Elevate Your Routine with Facial Fitness",
+  description: "Transform your facial fitness routine with MYFC. Track, manage, and optimize your facial exercises for better results."
+}
 
 export const dynamic = "force-static"
 
@@ -11,7 +17,7 @@ export default function HomePage() {
         <div className="relative w-24 h-24">
           <Image
             src="/logo.png"
-            alt="Taskk Logo"
+            alt="MYFC Logo"
             fill
             className="object-contain"
             priority
@@ -22,10 +28,10 @@ export default function HomePage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <h1 className="text-4xl md:text-5xl font-bold mb-2 tracking-tight">
-          Manage Tasks,
+        Elevate Your Routine
         </h1>
-        <h1 className="text-4xl md:text-5xl font-bold italic tracking-tight text-muted-foreground">
-          Master Time.
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-muted-foreground">
+        with Facial Fitness
         </h1>
       </div>
 

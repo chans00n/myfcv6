@@ -16,8 +16,11 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: "MYFC Dashboard",
-  description: "Dashboard for MYFC application",
+  title: {
+    default: "MYFC - Elevate Your Routine with Facial Fitness",
+    template: "%s | MYFC - Elevate Your Routine with Facial Fitness"
+  },
+  description: "Transform your facial fitness routine with MYFC. Track, manage, and optimize your facial exercises for better results.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -60,6 +63,7 @@ export default function RootLayout({
         />
 
         {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
 
         {/* iOS icons */}
