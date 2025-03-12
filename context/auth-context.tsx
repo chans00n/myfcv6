@@ -1,14 +1,12 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createClientComponentClient, type User } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
+import type { User } from '@supabase/supabase-js'
 import { useRouter, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 
 import type { Database } from "@/types/supabase"
-
-// Create a singleton instance of the Supabase client
-const supabase = createClientComponentClient<Database>()
 
 type AuthContextType = {
   user: User | null
@@ -25,6 +23,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+
+  // Create a new supabase browser client on every render
+  const supabase = createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     const initializeAuth = async () => {
