@@ -6,6 +6,14 @@ import type { NextRequest } from 'next/server'
 const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password', '/auth/clear']
 const adminRoutes = ['/admin', '/admin/workouts', '/admin/videos', '/admin/users', '/admin/settings', '/admin/setup']
 
+function isBase64(str: string) {
+  try {
+    return btoa(atob(str)) === str
+  } catch (err) {
+    return false
+  }
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -20,8 +28,16 @@ export async function middleware(request: NextRequest) {
       cookies: {
         get(name: string) {
           const cookie = request.cookies.get(name)
-          console.log('Middleware - Cookie get:', { name, exists: !!cookie })
-          return cookie?.value
+          if (!cookie) return null
+          
+          // If the cookie starts with 'base64-', return it as is
+          if (cookie.value.startsWith('base64-') || isBase64(cookie.value)) {
+            console.log('Middleware - Cookie get (base64):', { name, exists: true })
+            return cookie.value
+          }
+          
+          console.log('Middleware - Cookie get:', { name, exists: true })
+          return cookie.value
         },
         set(name: string, value: string, options: CookieOptions) {
           console.log('Middleware - Cookie set:', { name })
