@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Calendar, Home, LayoutGrid, List } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Home } from "lucide-react"
 import { WeeklyWorkoutSchedule } from "@/components/weekly-workout-schedule"
 import {
   Breadcrumb,
@@ -61,7 +61,7 @@ const workouts = [
 ]
 
 export default function WorkoutsPage() {
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("list")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null)
@@ -213,42 +213,19 @@ export default function WorkoutsPage() {
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  {currentWeek.startDate} - {currentWeek.endDate}
-                </span>
-                <div className="flex ml-2">
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-r-none">
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="sr-only">Previous week</span>
-                  </Button>
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-l-none border-l-0">
-                    <ChevronRight className="h-4 w-4" />
-                    <span className="sr-only">Next week</span>
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === "calendar" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("calendar")}
-                  className="gap-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Calendar
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4" />
+              <span>
+                {currentWeek.startDate} - {currentWeek.endDate}
+              </span>
+              <div className="flex ml-2">
+                <Button variant="outline" size="icon" className="h-8 w-8 rounded-r-none">
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="sr-only">Previous week</span>
                 </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="gap-2"
-                >
-                  <List className="h-4 w-4" />
-                  List
+                <Button variant="outline" size="icon" className="h-8 w-8 rounded-l-none border-l-0">
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="sr-only">Next week</span>
                 </Button>
               </div>
             </div>
