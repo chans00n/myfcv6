@@ -2,14 +2,17 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-context"
-import { SidebarProvider } from "@/components/sidebar-context"
-import { FavoritesProvider } from "@/context/favorites-context"
-import { MobileNavWrapper } from "@/components/mobile-nav-wrapper"
-import { PWAInitializer } from "./pwa-init"
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
+import dynamic from "next/dynamic"
 
 const inter = Inter({ subsets: ["latin"] })
+
+// Dynamic imports for client components
+const ThemeProvider = dynamic(() => import("@/components/theme-context").then(mod => mod.ThemeProvider), { ssr: false })
+const SidebarProvider = dynamic(() => import("@/components/sidebar-context").then(mod => mod.SidebarProvider), { ssr: false })
+const FavoritesProvider = dynamic(() => import("@/context/favorites-context").then(mod => mod.FavoritesProvider), { ssr: false })
+const MobileNavWrapper = dynamic(() => import("@/components/mobile-nav-wrapper").then(mod => mod.MobileNavWrapper), { ssr: false })
+const PWAInitializer = dynamic(() => import("./pwa-init").then(mod => mod.PWAInitializer), { ssr: false })
+const PWAInstallPrompt = dynamic(() => import("@/components/pwa-install-prompt").then(mod => mod.PWAInstallPrompt), { ssr: false })
 
 export const metadata: Metadata = {
   title: "MYFC Dashboard",
@@ -56,7 +59,7 @@ export const metadata: Metadata = {
     "apple-touch-fullscreen": "yes",
     "mobile-web-app-capable": "yes",
   },
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
