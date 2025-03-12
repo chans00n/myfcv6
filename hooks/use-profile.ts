@@ -1,7 +1,9 @@
 import { useCallback } from "react"
 import { useAuth } from "@/context/auth-context"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createBrowserClient } from '@supabase/ssr'
 import { toast } from "sonner"
+
+import type { Database } from "@/types/supabase"
 
 export type Profile = {
   id: string
@@ -15,7 +17,10 @@ export type Profile = {
 }
 
 // Create a singleton instance of the Supabase client
-const supabase = createClientComponentClient()
+const supabase = createBrowserClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export function useProfile() {
   const { user } = useAuth()
@@ -38,7 +43,7 @@ export function useProfile() {
             .insert([
               {
                 id: user.id,
-                name: user.user_metadata?.name || user.email?.split("@")[0] || "",
+                name: user.user_metadata?.full_name || user.email?.split("@")[0] || "",
                 avatar_url: user.user_metadata?.avatar_url || null,
               },
             ])
@@ -64,21 +69,41 @@ export function useProfile() {
       try {
         if (!user?.id) throw new Error("User not found")
 
-        const { error } = await supabase
+        // First update the user metadata
+        const { data: userData, error: metadataError } = await supabase.auth.updateUser({
+          data: {
+            full_name: updates.name,
+            avatar_url: updates.avatar_url,
+          }
+        })
+
+        if (metadataError) {
+          console.error('Metadata update error:', metadataError)
+          throw metadataError
+        }
+
+        // Then update the profile
+        const { data, error } = await supabase
           .from("profiles")
           .update({
             ...updates,
             updated_at: new Date().toISOString(),
           })
           .eq("id", user.id)
+          .select()
+          .single()
 
-        if (error) throw error
+        if (error) {
+          console.error('Profile update error:', error)
+          throw error
+        }
+        
         toast.success("Profile updated successfully")
-        return true
+        return data as Profile
       } catch (error) {
         console.error("Error updating profile:", error)
         toast.error("Failed to update profile")
-        return false
+        return null
       }
     },
     [user]
