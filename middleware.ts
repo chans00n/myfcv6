@@ -13,6 +13,10 @@ export async function middleware(request: NextRequest) {
     },
   })
 
+  console.log('Middleware - Starting middleware execution')
+  console.log('Middleware - Request path:', request.nextUrl.pathname)
+  console.log('Middleware - Request cookies:', request.cookies.getAll())
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -20,11 +24,11 @@ export async function middleware(request: NextRequest) {
       cookies: {
         get(name: string) {
           const cookie = request.cookies.get(name)
-          // Return the raw value without trying to parse it
+          console.log('Middleware - Getting cookie:', name, cookie?.value ? 'exists' : 'null')
           return cookie?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          // Set the cookie with the raw value
+          console.log('Middleware - Setting cookie:', name)
           response.cookies.set({
             name,
             value,
@@ -36,6 +40,7 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
+          console.log('Middleware - Removing cookie:', name)
           response.cookies.set({
             name,
             value: '',
@@ -52,16 +57,28 @@ export async function middleware(request: NextRequest) {
   )
 
   try {
-    console.log('Middleware - Processing request for path:', request.nextUrl.pathname)
+    console.log('Middleware - Getting session')
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    const { data: { session } } = await supabase.auth.getSession()
-    console.log('Middleware - Session:', session ? 'exists' : 'null')
+    if (sessionError) {
+      console.error('Middleware - Session error:', sessionError)
+    }
+    
+    console.log('Middleware - Session details:', {
+      exists: !!session,
+      user: session?.user ? {
+        id: session.user.id,
+        email: session.user.email,
+        raw_user_meta_data: session.user.user_metadata,
+        role: session.user.user_metadata?.role
+      } : null
+    })
     
     const pathname = request.nextUrl.pathname
 
     // Check for admin routes
     if (adminRoutes.some(route => pathname.startsWith(route))) {
-      console.log('Middleware - Accessing admin route')
+      console.log('Middleware - Accessing admin route:', pathname)
       
       if (!session) {
         console.log('Middleware - No session, redirecting to login')
@@ -70,18 +87,16 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl)
       }
 
-      // Debug log session details
-      console.log('Middleware - Session user details:', {
-        id: session.user.id,
-        email: session.user.email,
-        metadata: session.user.user_metadata,
-        role: session.user.user_metadata?.role
-      })
-
       // Check if user has admin role
       const userRole = session.user.user_metadata?.role
+      console.log('Middleware - User role check:', {
+        role: userRole,
+        isAdmin: userRole === 'admin',
+        fullMetadata: session.user.user_metadata
+      })
+
       if (userRole !== 'admin') {
-        console.log('Middleware - User role not admin:', userRole)
+        console.log('Middleware - Access denied: not admin')
         return NextResponse.redirect(new URL('/', request.url))
       }
 
@@ -108,6 +123,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    console.log('Middleware - Completing successfully')
     return response
   } catch (error) {
     console.error('Middleware error:', error)
