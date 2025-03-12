@@ -1,10 +1,22 @@
-import { redirect } from "next/navigation"
+export const dynamic = "force-static"
 
 export default function HomePage() {
-  // Redirect to the login page
-  redirect("/auth/login")
-
-  // This part won't be executed due to the redirect
-  return null
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container flex items-center justify-center min-h-[100vh]">
+        <div className="w-full max-w-md p-6 text-center">
+          <div className="animate-pulse">
+            <div className="h-8 w-32 bg-muted rounded mb-4 mx-auto"></div>
+            <div className="h-4 w-48 bg-muted rounded mb-8 mx-auto"></div>
+            <div className="space-y-3">
+              <div className="h-20 bg-muted rounded"></div>
+              <div className="h-20 bg-muted rounded"></div>
+              <div className="h-20 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
