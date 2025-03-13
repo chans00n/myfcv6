@@ -39,6 +39,8 @@
     "@radix-ui/react-toggle": "^1.1.1",
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.6",
+    "@stripe/react-stripe-js": "^3.4.0",
+    "@stripe/stripe-js": "^6.0.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
@@ -65,10 +67,11 @@
     "recharts": "latest",
     "sharp": "latest",
     "sonner": "^1.7.4",
+    "stripe": "^17.7.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "web-push": "latest",
-    "zod": "latest"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22",

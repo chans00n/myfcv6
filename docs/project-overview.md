@@ -102,6 +102,62 @@
 4. Offline capabilities
 5. Security hardening
 
+## Future Improvements Roadmap
+
+### 1. User Experience Enhancements
+- [ ] Personalized dashboard with workout progress metrics
+- [ ] Interactive workout calendar/planner
+- [ ] Progress tracking with visual charts and graphs
+- [ ] Social features (sharing workouts, following other users)
+- [ ] Achievement/badge system for completed workouts
+- [ ] Custom workout program builder
+
+### 2. Content & Media
+- [ ] HD video streaming optimization
+- [ ] Offline video caching for premium users
+- [ ] Interactive exercise form guides
+- [ ] Live streaming capabilities for trainers
+- [ ] Multi-language support
+- [ ] Audio-guided workouts
+
+### 3. Mobile & Cross-platform
+- [ ] Progressive Web App improvements
+- [ ] Push notifications for workout reminders
+- [ ] Device sync for workout tracking
+- [ ] Apple Health/Google Fit integration
+- [ ] Export functionality for workout data
+
+### 4. AI & Personalization
+- [ ] AI-powered workout recommendations
+- [ ] Form correction using device camera
+- [ ] Dynamic difficulty adjustment
+- [ ] Personalized nutrition recommendations
+- [ ] Smart workout scheduling
+
+### Implementation Notes
+- Features should be prioritized based on user feedback
+- Consider technical dependencies when planning implementation order
+- Each feature should go through proper design and testing phases
+- Regular user testing should guide feature development
+- Performance impact should be evaluated for each feature
+
+## Subscription System Implementation
+The subscription system implementation is a major upcoming feature. Key details:
+
+### Overview
+- Single-tier membership model
+- Monthly ($19.99) and annual ($179.99) billing options
+- 7-day free trial for all new members
+- Stripe integration for payment processing
+
+### Implementation Timeline
+- Phase 1 (Weeks 1-2): Foundation - Stripe setup, database updates
+- Phase 2 (Weeks 3-4): Core functionality - Payment flow, trial system
+- Phase 3 (Weeks 5-6): Enhancements - Email notifications, analytics
+- Phase 4 (Weeks 7-8): Polish & Launch - Testing, documentation
+
+For detailed implementation plan, see [Subscription Implementation Plan](./subscription-implementation.md)
+
 ## Notes
 - This document was created on March 13, 2024
 - Use this as a living document to track progress and updates

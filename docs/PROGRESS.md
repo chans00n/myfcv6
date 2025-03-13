@@ -55,3 +55,35 @@
 - Add new items to appropriate sections as they come up
 
 *Last updated: March 13, 2024* 
+
+interface SubscriptionTier {
+  id: string;
+  name: string;
+  price: number;
+  interval: 'month' | 'year';
+  features: string[];
+}
+
+const subscriptionTiers = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    price: 9.99,
+    interval: 'month',
+    features: ['Basic workouts', 'Progress tracking']
+  },
+  {
+    id: 'pro',
+    name: 'Professional',
+    price: 19.99,
+    interval: 'month',
+    features: ['All basic features', 'HD videos', 'Custom programs']
+  },
+  {
+    id: 'elite',
+    name: 'Elite',
+    price: 29.99,
+    interval: 'month',
+    features: ['All pro features', 'Personal coaching', 'Priority support']
+  }
+] 
