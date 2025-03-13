@@ -57,6 +57,13 @@ export function getSupabaseBrowserClient() {
                 console.error('Storage removeItem error:', { key, error })
               }
             }
+          },
+          cookieOptions: {
+            name: 'sb-auth-token',
+            lifetime: 60 * 60 * 24 * 7, // 1 week
+            domain: window.location.hostname.includes('localhost') ? undefined : '.myfc.app',
+            path: '/',
+            sameSite: 'lax'
           }
         },
         cookies: {

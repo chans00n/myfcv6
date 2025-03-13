@@ -51,7 +51,8 @@ export async function POST(request: Request) {
             'WWW-Authenticate': 'Bearer error="invalid_token"',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Credentials': 'true'
           }
         }
       );
@@ -91,8 +92,8 @@ export async function POST(request: Request) {
 
     // Log successful authentication
     console.log('User authenticated:', {
-      userId: session.user.id,
-      email: session.user.email
+      userId: authenticatedUser.id,
+      email: authenticatedUser.email
     });
 
     const { successUrl, cancelUrl, planType = 'monthly' } = await request.json();
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('stripe_customer_id')
-      .eq('id', session.user.id)
+      .eq('id', authenticatedUser.id)
       .single();
 
     if (profileError) {
@@ -125,9 +126,9 @@ export async function POST(request: Request) {
       try {
         // Create a new customer
         const customer = await stripe.customers.create({
-          email: session.user.email,
+          email: authenticatedUser.email,
           metadata: {
-            user_id: session.user.id
+            user_id: authenticatedUser.id
           }
         });
         customerId = customer.id;
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
             stripe_customer_id: customerId,
             updated_at: new Date().toISOString()
           })
-          .eq('id', session.user.id);
+          .eq('id', authenticatedUser.id);
 
         if (updateError) {
           console.error('Error updating profile:', updateError);
@@ -183,14 +184,14 @@ export async function POST(request: Request) {
         subscription_data: {
           trial_period_days: STRIPE_CONFIG.prices[planType === 'annual' ? 'annual' : 'monthly'].trialDays || 7,
           metadata: {
-            user_id: session.user.id,
+            user_id: authenticatedUser.id,
             plan_type: planType
           }
         },
         allow_promotion_codes: true,
-        client_reference_id: session.user.id,
+        client_reference_id: authenticatedUser.id,
         metadata: {
-          user_id: session.user.id,
+          user_id: authenticatedUser.id,
           plan_type: planType
         }
       });
@@ -198,7 +199,7 @@ export async function POST(request: Request) {
       // Log the checkout session creation
       console.log('Checkout session created:', {
         sessionId: checkoutSession.id,
-        userId: session.user.id,
+        userId: authenticatedUser.id,
         customerId,
         planType
       });

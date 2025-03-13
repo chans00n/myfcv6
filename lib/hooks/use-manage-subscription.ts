@@ -80,7 +80,34 @@ export function useManageSubscription() {
           if (!refreshed) {
             throw new Error('Your session has expired. Please log in again.');
           }
-          throw new Error('Please try again. Your session has been refreshed.');
+          // Try the request again with the refreshed session
+          const token = await getAuthToken();
+          if (!token) {
+            throw new Error('Failed to get authentication token');
+          }
+          
+          const retryResponse = await fetch('/api/subscriptions/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              successUrl: `${window.location.origin}/settings?tab=billing&status=success`,
+              cancelUrl: `${window.location.origin}/settings?tab=billing&status=cancelled`,
+              planType: 'monthly'
+            }),
+            credentials: 'include'
+          });
+
+          if (!retryResponse.ok) {
+            const retryData = await retryResponse.json().catch(() => ({}));
+            throw new Error(retryData.error || retryData.details || 'Failed to create checkout session after refresh');
+          }
+
+          const retryResult = await retryResponse.json();
+          window.location.href = retryResult.url;
+          return;
         }
 
         throw new Error(data.error || data.details || 'Failed to create checkout session');
@@ -115,16 +142,36 @@ export function useManageSubscription() {
   const getAuthToken = async () => {
     try {
       const supabase = getSupabaseBrowserClient();
+      if (!supabase) {
+        console.error('Failed to initialize Supabase client');
+        return null;
+      }
+
       const { data: { session }, error } = await supabase.auth.getSession();
+      
       if (error) {
         console.error('Error getting auth token:', error);
         return null;
       }
+      
       if (!session?.access_token) {
         console.log('No access token in session, attempting refresh');
         const refreshResult = await refreshSession();
+        if (!refreshResult?.access_token) {
+          console.error('Failed to get access token after refresh');
+          return null;
+        }
+        return refreshResult.access_token;
+      }
+      
+      // Verify the token is still valid
+      const { data: { user }, error: verifyError } = await supabase.auth.getUser(session.access_token);
+      if (verifyError || !user) {
+        console.log('Token verification failed, attempting refresh');
+        const refreshResult = await refreshSession();
         return refreshResult?.access_token || null;
       }
+      
       return session.access_token;
     } catch (error) {
       console.error('Error getting auth token:', error);
