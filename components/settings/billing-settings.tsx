@@ -198,7 +198,7 @@ export function BillingSettings() {
         className: "bg-background border-border",
       });
     } catch (error) {
-      toast.error('Failed to start subscription', {
+      toast.error('Failed to start membership', {
         icon: <XCircle className="h-4 w-4 text-destructive" />,
         description: 'Please try again or contact support if the issue persists',
         className: "bg-background border-border",
@@ -237,22 +237,22 @@ export function BillingSettings() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Subscription Status</CardTitle>
+          <CardTitle>Membership Status</CardTitle>
           <CardDescription>
             {subscription ? (
               subscription.status === 'active' ? (
-                'Your subscription is active'
+                'Your membership is active'
               ) : subscription.status === 'trialing' ? (
                 'Your free trial is active'
               ) : subscription.status === 'past_due' ? (
-                'Your subscription payment is past due'
+                'Your membership payment is past due'
               ) : subscription.status === 'canceled' ? (
-                'Your subscription has been canceled'
+                'Your membership has been canceled'
               ) : (
-                'Manage your subscription and billing information'
+                'Manage your membership and billing information'
               )
             ) : (
-              'Start your subscription to access premium features'
+              'Start your membership to access premium features'
             )}
           </CardDescription>
         </CardHeader>
@@ -266,12 +266,12 @@ export function BillingSettings() {
                 </p>
               </div>
               <Button onClick={handleManageSubscription} disabled={isLoadingAction}>
-                Manage Subscription
+                Manage Membership
               </Button>
             </div>
           ) : (
             <Button onClick={handleStartSubscription} disabled={isLoadingAction}>
-              Start Subscription
+              Start Membership
             </Button>
           )}
         </CardContent>

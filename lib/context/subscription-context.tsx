@@ -22,59 +22,79 @@ interface SubscriptionContextType {
   refetch: () => Promise<void>;
 }
 
-export const SubscriptionContext = createContext<SubscriptionContextType>({
-  subscription: null,
-  isLoading: true,
-  error: null,
-  refetch: async () => {},
-});
+const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-export function useSubscription() {
-  const context = useContext(SubscriptionContext);
-
-  if (!context) {
-    throw new Error('useSubscription must be used within a SubscriptionProvider');
-  }
-
-  return context;
-}
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (retry = false) => {
     if (!user) {
       setSubscription(null);
       setIsLoading(false);
+      setError(null);
       return;
     }
 
     try {
       const response = await fetch('/api/subscriptions/status');
       if (!response.ok) {
-        throw new Error('Failed to fetch subscription status');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch subscription status');
       }
 
       const data = await response.json();
-      setSubscription({
+      
+      if (!data.subscription && retryCount < MAX_RETRIES && retry) {
+        // If no subscription data and we haven't exceeded retries, try again
+        setRetryCount((count) => count + 1);
+        setTimeout(() => fetchSubscription(true), RETRY_DELAY * Math.pow(2, retryCount));
+        return;
+      }
+
+      setSubscription(data.subscription ? {
         ...data.subscription,
         isActive: ['active', 'trialing'].includes(data.subscription?.status),
         isTrialing: data.subscription?.status === 'trialing',
         isPastDue: data.subscription?.status === 'past_due',
         isCanceled: data.subscription?.status === 'canceled',
-      });
+      } : null);
+      setError(null);
     } catch (err) {
+      console.error('Error fetching subscription:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
+      
+      if (retryCount < MAX_RETRIES && retry) {
+        // If error and we haven't exceeded retries, try again
+        setRetryCount((count) => count + 1);
+        setTimeout(() => fetchSubscription(true), RETRY_DELAY * Math.pow(2, retryCount));
+        return;
+      }
     } finally {
       setIsLoading(false);
     }
+  }, [user, retryCount]);
+
+  // Reset retry count when user changes
+  useEffect(() => {
+    setRetryCount(0);
   }, [user]);
 
+  // Initial fetch with retry enabled
   useEffect(() => {
-    fetchSubscription();
+    fetchSubscription(true);
+  }, [fetchSubscription]);
+
+  // Manual refetch without retry
+  const refetch = useCallback(async () => {
+    setIsLoading(true);
+    await fetchSubscription(false);
   }, [fetchSubscription]);
 
   return (
@@ -83,10 +103,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         subscription,
         isLoading,
         error,
-        refetch: fetchSubscription,
+        refetch,
       }}
     >
       {children}
     </SubscriptionContext.Provider>
   );
+}
+
+export function useSubscription() {
+  const context = useContext(SubscriptionContext);
+  if (context === undefined) {
+    throw new Error('useSubscription must be used within a SubscriptionProvider');
+  }
+  return context;
 } 

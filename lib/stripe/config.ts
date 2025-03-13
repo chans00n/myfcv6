@@ -5,6 +5,7 @@ export type SubscriptionPlan = {
   description: string;
   stripePriceId: string;
   amount: number;
+  trialDays?: number;
 };
 
 export type StripeConfig = {
@@ -22,12 +23,14 @@ export const STRIPE_CONFIG: StripeConfig = {
       description: 'Monthly subscription to Pro features',
       stripePriceId: env.STRIPE_PRICE_ID_MONTHLY,
       amount: 1999, // $19.99
+      trialDays: 7,
     },
     annual: {
       name: 'Pro Plan',
       description: 'Annual subscription to Pro features (save 25%)',
       stripePriceId: env.STRIPE_PRICE_ID_ANNUAL,
       amount: 17999, // $179.99
+      trialDays: 7,
     },
   },
   features: [

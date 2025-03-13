@@ -17,7 +17,6 @@ export function useManageSubscription() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID,
           successUrl: `${window.location.origin}/settings?tab=billing&status=success`,
           cancelUrl: `${window.location.origin}/settings?tab=billing&status=cancelled`
         })

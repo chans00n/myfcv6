@@ -12,42 +12,90 @@ async function updateSubscriptionStatus(
 ) {
   const { customer, status, current_period_end, cancel_at_period_end } = subscription;
   
-  // Get user_id from stripe customer metadata
-  const customerData = await stripe.customers.retrieve(customer as string) as Stripe.Customer;
-  const userId = customerData.metadata?.user_id;
+  try {
+    // Get user_id from stripe customer metadata
+    const customerData = await stripe.customers.retrieve(customer as string) as Stripe.Customer;
+    const userId = customerData.metadata?.user_id;
 
-  if (!userId) {
-    console.error('No user_id found in customer metadata');
-    return;
-  }
+    if (!userId) {
+      console.error('No user_id found in customer metadata', { customer });
+      return;
+    }
 
-  // Update user_profiles table
-  const { error } = await supabase
-    .from('user_profiles')
-    .update({
-      subscription_status: status,
-      subscription_id: subscription.id,
-      subscription_ends_at: new Date(current_period_end * 1000).toISOString(),
-      cancel_at_period_end
-    })
-    .eq('id', userId);
+    // Update user_profiles table
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        subscription_status: status,
+        subscription_id: subscription.id,
+        subscription_ends_at: new Date(current_period_end * 1000).toISOString(),
+        cancel_at_period_end,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
 
-  if (error) {
-    console.error('Error updating subscription status:', error);
+    if (updateError) {
+      console.error('Error updating subscription status:', updateError);
+      throw updateError;
+    }
+
+    // Log subscription event
+    const { error: eventError } = await supabase.from('subscription_events').insert({
+      user_id: userId,
+      event_type: `subscription.${status}`,
+      stripe_event_id: subscription.id,
+      metadata: {
+        customer_id: customer,
+        period_end: current_period_end,
+        cancel_at_period_end,
+        price_id: subscription.items.data[0]?.price.id,
+        plan_type: subscription.items.data[0]?.price.nickname
+      }
+    });
+
+    if (eventError) {
+      console.error('Error logging subscription event:', eventError);
+      throw eventError;
+    }
+  } catch (error) {
+    console.error('Error in updateSubscriptionStatus:', error);
     throw error;
   }
+}
 
-  // Log subscription event
-  await supabase.from('subscription_events').insert({
-    user_id: userId,
-    event_type: `subscription.${status}`,
-    stripe_event_id: subscription.id,
-    metadata: {
-      customer_id: customer,
-      period_end: current_period_end,
-      cancel_at_period_end
+async function handlePaymentIntent(
+  paymentIntent: Stripe.PaymentIntent,
+  supabase: ReturnType<typeof createServerClient>
+) {
+  const { customer, metadata } = paymentIntent;
+  
+  if (!customer) return;
+
+  try {
+    const customerData = await stripe.customers.retrieve(customer as string) as Stripe.Customer;
+    const userId = customerData.metadata?.user_id;
+
+    if (!userId) {
+      console.error('No user_id found in customer metadata', { customer });
+      return;
     }
-  });
+
+    await supabase.from('subscription_events').insert({
+      user_id: userId,
+      event_type: `payment_intent.${paymentIntent.status}`,
+      stripe_event_id: paymentIntent.id,
+      metadata: {
+        customer_id: customer,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        payment_method: paymentIntent.payment_method,
+        ...metadata
+      }
+    });
+  } catch (error) {
+    console.error('Error handling payment intent:', error);
+    throw error;
+  }
 }
 
 export async function POST(request: Request) {
@@ -79,7 +127,6 @@ export async function POST(request: Request) {
         break;
 
       case 'customer.subscription.trial_will_end':
-        // Handle trial ending soon (3 days before)
         const subscription = event.data.object as Stripe.Subscription;
         const customerData = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
         const userId = customerData.metadata?.user_id;
@@ -91,19 +138,33 @@ export async function POST(request: Request) {
             stripe_event_id: event.id,
             metadata: {
               trial_end: subscription.trial_end,
-              customer_id: subscription.customer
+              customer_id: subscription.customer,
+              price_id: subscription.items.data[0]?.price.id
             }
           });
         }
         break;
 
+      case 'payment_intent.succeeded':
+      case 'payment_intent.payment_failed':
+        await handlePaymentIntent(event.data.object as Stripe.PaymentIntent, supabase);
+        break;
+
       case 'invoice.payment_failed':
         const invoice = event.data.object as Stripe.Invoice;
-        // Handle failed payment
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
           await updateSubscriptionStatus(subscription, supabase);
+          
+          // Also handle the failed payment intent if it exists
+          if (invoice.payment_intent && typeof invoice.payment_intent !== 'string') {
+            await handlePaymentIntent(invoice.payment_intent, supabase);
+          }
         }
+        break;
+
+      case 'customer.updated':
+        // Handle customer updates if needed
         break;
 
       default:
@@ -111,8 +172,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err) {
-    console.error('Webhook error:', err);
+  } catch (error) {
+    console.error('Webhook error:', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 400 }

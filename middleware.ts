@@ -10,6 +10,13 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
   const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1')
 
+  // Debug cookie information
+  console.log('Cookies:', {
+    all: request.cookies.getAll(),
+    auth: request.cookies.get('sb-auth-token'),
+    refresh: request.cookies.get('sb-refresh-token')
+  })
+
   // Create a Supabase client using server runtime
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +24,9 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          return request.cookies.get(name)?.value
+          const cookie = request.cookies.get(name)
+          console.log('Getting cookie:', name, cookie?.value)
+          return cookie?.value
         },
         set(name: string, value: string, options: CookieOptions) {
           const cookieOptions = {
@@ -30,6 +39,7 @@ export async function middleware(request: NextRequest) {
             domain: isLocalhost ? undefined : hostname
           }
           
+          console.log('Setting cookie:', name, cookieOptions)
           response.cookies.set(cookieOptions)
         },
         remove(name: string, options: CookieOptions) {
@@ -44,6 +54,7 @@ export async function middleware(request: NextRequest) {
             domain: isLocalhost ? undefined : hostname
           }
           
+          console.log('Removing cookie:', name, cookieOptions)
           response.cookies.set(cookieOptions)
         },
       },
@@ -51,7 +62,15 @@ export async function middleware(request: NextRequest) {
   )
 
   // Check auth status
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  
+  // Debug session information
+  console.log('Session check:', {
+    hasSession: !!session,
+    error: sessionError,
+    userId: session?.user?.id,
+    path: request.url
+  })
 
   // Get the pathname
   const path = new URL(request.url).pathname
@@ -75,6 +94,7 @@ export async function middleware(request: NextRequest) {
 
   // If the route is not public and there's no session, redirect to login
   if (!isPublicRoute && !isAuthenticatedApiRoute && !session) {
+    console.log('Redirecting to login:', { path, isPublicRoute, isAuthenticatedApiRoute })
     const redirectUrl = new URL('/auth/login', request.url)
     // Add the current path as a redirect parameter
     redirectUrl.searchParams.set('redirectTo', path)
@@ -83,6 +103,7 @@ export async function middleware(request: NextRequest) {
 
   // For authenticated API routes, check session
   if (isAuthenticatedApiRoute && !session) {
+    console.log('API auth failed:', { path, hasSession: !!session })
     return NextResponse.json(
       { error: 'Not authenticated' },
       { status: 401 }
@@ -98,6 +119,11 @@ export async function middleware(request: NextRequest) {
       // If not an admin, redirect to home
       return NextResponse.redirect(new URL('/', request.url))
     }
+  }
+
+  // Add session user to response headers for debugging
+  if (session?.user) {
+    response.headers.set('x-user-id', session.user.id)
   }
 
   return response

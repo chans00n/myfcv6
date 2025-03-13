@@ -11,8 +11,8 @@ const envSchema = z.object({
   // Client-side variables
   NEXT_PUBLIC_APP_URL: z.string().url().optional().default('http://localhost:3000'),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
-  NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID: z.string().min(1),
-  NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID: z.string().min(1),
+  NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID: z.string().optional(),
+  NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID: z.string().optional(),
 });
 
 export const env = envSchema.parse({
