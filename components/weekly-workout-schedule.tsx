@@ -7,225 +7,26 @@ import { Button } from "@/components/ui/button"
 import { Play } from "lucide-react"
 import { WorkoutDetailModal } from "./workout-detail-modal"
 
-// Sample data - in a real app, this would come from an API
-const workouts = [
-  {
-    id: "1",
-    day: "Monday",
-    title: "Full Body",
-    duration: "22 min",
-    image: "/placeholder.svg?height=200&width=350",
-    type: "Recovery",
-    episode: "33",
-    exercises: [
-      { id: "e1", name: "Half Saddle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e2", name: "Bound Angle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e3", name: "Supine Twist", image: "/placeholder.svg?height=64&width=64" },
-    ],
-    targetAreas: [
-      { name: "Ankles" },
-      { name: "Groin" },
-      { name: "Quads" },
-      { name: "Lower Back" },
-      { name: "IT Band" },
-      { name: "Hips" },
-      { name: "Glutes" },
-      { name: "Spine" },
-      { name: "Knees" },
-    ],
-    relatedWorkouts: [
-      {
-        id: "r1",
-        title: "Skywalker",
-        duration: "45 min",
-        type: "Recovery",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-      {
-        id: "r2",
-        title: "Ankles + Calves Fix",
-        duration: "16 min",
-        type: "Corrective",
-        episode: "8",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-    ],
-  },
-  {
-    id: "2",
-    day: "Tuesday",
-    title: "Lower Body",
-    duration: "22 min",
-    image: "/placeholder.svg?height=200&width=350",
-    type: "Recovery",
-    episode: "33",
-    exercises: [
-      { id: "e1", name: "Half Saddle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e2", name: "Bound Angle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e3", name: "Supine Twist", image: "/placeholder.svg?height=64&width=64" },
-    ],
-    targetAreas: [
-      { name: "Ankles" },
-      { name: "Groin" },
-      { name: "Quads" },
-      { name: "Lower Back" },
-      { name: "IT Band" },
-      { name: "Hips" },
-      { name: "Glutes" },
-      { name: "Spine" },
-      { name: "Knees" },
-    ],
-    relatedWorkouts: [
-      {
-        id: "r1",
-        title: "Skywalker",
-        duration: "45 min",
-        type: "Recovery",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-      {
-        id: "r2",
-        title: "Ankles + Calves Fix",
-        duration: "16 min",
-        type: "Corrective",
-        episode: "8",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-    ],
-  },
-  {
-    id: "3",
-    day: "Wednesday",
-    title: "Upper Body",
-    duration: "22 min",
-    image: "/placeholder.svg?height=200&width=350",
-    type: "Recovery",
-    episode: "33",
-    exercises: [
-      { id: "e1", name: "Half Saddle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e2", name: "Bound Angle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e3", name: "Supine Twist", image: "/placeholder.svg?height=64&width=64" },
-    ],
-    targetAreas: [
-      { name: "Ankles" },
-      { name: "Groin" },
-      { name: "Quads" },
-      { name: "Lower Back" },
-      { name: "IT Band" },
-      { name: "Hips" },
-      { name: "Glutes" },
-      { name: "Spine" },
-      { name: "Knees" },
-    ],
-    relatedWorkouts: [
-      {
-        id: "r1",
-        title: "Skywalker",
-        duration: "45 min",
-        type: "Recovery",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-      {
-        id: "r2",
-        title: "Ankles + Calves Fix",
-        duration: "16 min",
-        type: "Corrective",
-        episode: "8",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-    ],
-  },
-  {
-    id: "4",
-    day: "Thursday",
-    title: "Whole Body",
-    duration: "22 min",
-    image: "/placeholder.svg?height=200&width=350",
-    type: "Recovery",
-    episode: "33",
-    exercises: [
-      { id: "e1", name: "Half Saddle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e2", name: "Bound Angle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e3", name: "Supine Twist", image: "/placeholder.svg?height=64&width=64" },
-    ],
-    targetAreas: [
-      { name: "Ankles" },
-      { name: "Groin" },
-      { name: "Quads" },
-      { name: "Lower Back" },
-      { name: "IT Band" },
-      { name: "Hips" },
-      { name: "Glutes" },
-      { name: "Spine" },
-      { name: "Knees" },
-    ],
-    relatedWorkouts: [
-      {
-        id: "r1",
-        title: "Skywalker",
-        duration: "45 min",
-        type: "Recovery",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-      {
-        id: "r2",
-        title: "Ankles + Calves Fix",
-        duration: "16 min",
-        type: "Corrective",
-        episode: "8",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-    ],
-  },
-  {
-    id: "5",
-    day: "Friday",
-    title: "Core Focus",
-    duration: "22 min",
-    image: "/placeholder.svg?height=200&width=350",
-    type: "Recovery",
-    episode: "33",
-    exercises: [
-      { id: "e1", name: "Half Saddle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e2", name: "Bound Angle", image: "/placeholder.svg?height=64&width=64" },
-      { id: "e3", name: "Supine Twist", image: "/placeholder.svg?height=64&width=64" },
-    ],
-    targetAreas: [
-      { name: "Ankles" },
-      { name: "Groin" },
-      { name: "Quads" },
-      { name: "Lower Back" },
-      { name: "IT Band" },
-      { name: "Hips" },
-      { name: "Glutes" },
-      { name: "Spine" },
-      { name: "Knees" },
-    ],
-    relatedWorkouts: [
-      {
-        id: "r1",
-        title: "Skywalker",
-        duration: "45 min",
-        type: "Recovery",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-      {
-        id: "r2",
-        title: "Ankles + Calves Fix",
-        duration: "16 min",
-        type: "Corrective",
-        episode: "8",
-        image: "/placeholder.svg?height=128&width=192",
-      },
-    ],
-  },
-]
+interface Workout {
+  id: string
+  date: string
+  title: string
+  description: string
+  duration: string
+  type: string
+  image: string
+  difficulty: string
+}
 
-export function WeeklyWorkoutSchedule() {
-  const [selectedWorkout, setSelectedWorkout] = useState<(typeof workouts)[0] | null>(null)
+interface WeeklyWorkoutScheduleProps {
+  workouts: Workout[]
+}
+
+export function WeeklyWorkoutSchedule({ workouts }: WeeklyWorkoutScheduleProps) {
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
-  const handleWorkoutClick = (workout: (typeof workouts)[0]) => {
+  const handleWorkoutClick = (workout: Workout) => {
     setSelectedWorkout(workout)
     setModalOpen(true)
   }
@@ -245,7 +46,7 @@ export function WeeklyWorkoutSchedule() {
                 className="object-cover aspect-video w-full"
               />
               <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded z-20">
-                {workout.day}
+                {workout.date}
               </div>
               <Button
                 size="icon"

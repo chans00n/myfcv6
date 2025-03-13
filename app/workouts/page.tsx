@@ -252,7 +252,7 @@ export default function WorkoutsPage() {
         </div>
 
         {viewMode === "calendar" ? (
-          <WeeklyWorkoutSchedule />
+          <WeeklyWorkoutSchedule workouts={filteredWorkouts} />
         ) : (
           <div className="grid gap-6">
             {filteredWorkouts.map((workout) => (
