@@ -1,19 +1,39 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { stripe } from '@/lib/stripe/client';
+import { createClient } from '@/lib/supabase/server';
 import { env } from '@/env.mjs';
 import { STRIPE_CONFIG } from '@/lib/stripe/config';
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    const supabase = createClient();
+    
+    // Get session and log debug info
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    console.log('Create subscription attempt:', {
+      hasSession: !!session,
+      sessionError,
+      userId: session?.user?.id
+    });
+
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      return NextResponse.json(
+        { error: 'Authentication error', details: sessionError.message },
+        { status: 401 }
+      );
+    }
 
     if (!session) {
       return NextResponse.json(
         { error: 'Not authenticated' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'WWW-Authenticate': 'Bearer error="invalid_token"'
+          }
+        }
       );
     }
 
@@ -21,7 +41,7 @@ export async function POST(request: Request) {
 
     if (!successUrl || !cancelUrl) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Missing required parameters', details: 'Success and cancel URLs are required' },
         { status: 400 }
       );
     }
@@ -36,7 +56,7 @@ export async function POST(request: Request) {
     if (profileError) {
       console.error('Error fetching profile:', profileError);
       return NextResponse.json(
-        { error: 'Failed to fetch user profile' },
+        { error: 'Failed to fetch user profile', details: profileError.message },
         { status: 500 }
       );
     }
@@ -57,16 +77,20 @@ export async function POST(request: Request) {
         // Save customer ID to profile
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ stripe_customer_id: customerId })
+          .update({ 
+            stripe_customer_id: customerId,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', session.user.id);
 
         if (updateError) {
+          console.error('Error updating profile:', updateError);
           throw new Error('Failed to update profile with customer ID');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error creating/updating customer:', error);
         return NextResponse.json(
-          { error: 'Failed to create customer' },
+          { error: 'Failed to create customer', details: error.message },
           { status: 500 }
         );
       }
@@ -76,6 +100,13 @@ export async function POST(request: Request) {
     const priceId = planType === 'annual' 
       ? env.STRIPE_PRICE_ID_ANNUAL 
       : env.STRIPE_PRICE_ID_MONTHLY;
+
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Invalid plan type or missing price configuration' },
+        { status: 500 }
+      );
+    }
 
     // Create checkout session
     try {
@@ -99,21 +130,33 @@ export async function POST(request: Request) {
           }
         },
         allow_promotion_codes: true,
-        client_reference_id: session.user.id
+        client_reference_id: session.user.id,
+        metadata: {
+          user_id: session.user.id,
+          plan_type: planType
+        }
+      });
+
+      // Log the checkout session creation
+      console.log('Checkout session created:', {
+        sessionId: checkoutSession.id,
+        userId: session.user.id,
+        customerId,
+        planType
       });
 
       return NextResponse.json({ url: checkoutSession.url });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating checkout session:', error);
       return NextResponse.json(
-        { error: 'Failed to create checkout session' },
+        { error: 'Failed to create checkout session', details: error.message },
         { status: 500 }
       );
     }
-  } catch (error) {
-    console.error('Unexpected error:', error);
+  } catch (error: any) {
+    console.error('Unexpected error in create subscription:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { error: 'Failed to process subscription request', details: error.message },
       { status: 500 }
     );
   }
