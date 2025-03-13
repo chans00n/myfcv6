@@ -2,14 +2,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/supabase'
 import type { CookieOptions } from '@supabase/ssr'
 
-function isBase64(str: string) {
-  try {
-    return btoa(atob(str)) === str
-  } catch (err) {
-    return false
-  }
-}
-
 let supabaseClient: ReturnType<typeof createBrowserClient<Database>> | null = null
 
 export function getSupabaseBrowserClient() {
@@ -70,21 +62,7 @@ export function getSupabaseBrowserClient() {
             try {
               const cookies = document.cookie.split(';')
               const cookie = cookies.find(c => c.trim().startsWith(name + '='))
-              if (!cookie) return null
-              
-              const value = decodeURIComponent(cookie.split('=')[1].trim())
-              
-              // Return base64 cookies as-is without parsing
-              if (value.startsWith('base64-')) {
-                return value
-              }
-              
-              // Try to parse as JSON if not base64
-              try {
-                return JSON.parse(value)
-              } catch {
-                return value
-              }
+              return cookie ? decodeURIComponent(cookie.split('=')[1]) : null
             } catch (error) {
               console.error('Error reading cookie:', error)
               return null
@@ -92,13 +70,9 @@ export function getSupabaseBrowserClient() {
           },
           set(name: string, value: string, options: CookieOptions) {
             try {
-              let cookieValue = value
-              if (typeof value === 'object') {
-                cookieValue = JSON.stringify(value)
-              }
-              
               const domain = window.location.hostname
-              document.cookie = `${name}=${encodeURIComponent(cookieValue)}; path=${options.path ?? '/'}; domain=${domain}; secure; samesite=lax`
+              const isLocalhost = domain.includes('localhost') || domain.includes('127.0.0.1')
+              document.cookie = `${name}=${encodeURIComponent(value)}; path=${options.path ?? '/'}; domain=${isLocalhost ? undefined : `.${domain}`}; secure=${process.env.NODE_ENV === 'production'}; samesite=lax; max-age=${60 * 60 * 24 * 7}`
             } catch (error) {
               console.error('Error setting cookie:', error)
             }
@@ -106,7 +80,8 @@ export function getSupabaseBrowserClient() {
           remove(name: string, options: CookieOptions) {
             try {
               const domain = window.location.hostname
-              document.cookie = `${name}=; path=${options.path ?? '/'}; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=lax`
+              const isLocalhost = domain.includes('localhost') || domain.includes('127.0.0.1')
+              document.cookie = `${name}=; path=${options.path ?? '/'}; domain=${isLocalhost ? undefined : `.${domain}`}; secure=${process.env.NODE_ENV === 'production'}; samesite=lax; expires=Thu, 01 Jan 1970 00:00:00 GMT`
             } catch (error) {
               console.error('Error removing cookie:', error)
             }

@@ -3,63 +3,49 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Create a response object to modify
-  let response = NextResponse.next()
-
-  // Get the hostname from the request
-  const hostname = request.headers.get('host') || ''
-  const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1')
-
-  // Debug cookie information
-  console.log('Cookies:', {
-    all: request.cookies.getAll(),
-    auth: request.cookies.get('sb-auth-token'),
-    refresh: request.cookies.get('sb-refresh-token')
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
   })
 
-  // Create a Supabase client using server runtime
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          const cookie = request.cookies.get(name)
-          console.log('Getting cookie:', name, cookie?.value)
-          return cookie?.value
+          return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          const cookieOptions = {
+          response.cookies.set({
             name,
             value,
             ...options,
-            secure: true,
-            sameSite: 'lax' as const,
-            path: '/',
-            domain: isLocalhost ? undefined : hostname
-          }
-          
-          console.log('Setting cookie:', name, cookieOptions)
-          response.cookies.set(cookieOptions)
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
+          })
         },
         remove(name: string, options: CookieOptions) {
-          const cookieOptions = {
+          response.cookies.set({
             name,
             value: '',
             ...options,
             expires: new Date(0),
-            secure: true,
-            sameSite: 'lax' as const,
-            path: '/',
-            domain: isLocalhost ? undefined : hostname
-          }
-          
-          console.log('Removing cookie:', name, cookieOptions)
-          response.cookies.set(cookieOptions)
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
+          })
         },
       },
     }
   )
+
+  // Debug cookie information
+  console.log('Cookies:', {
+    all: request.cookies.getAll(),
+    auth: request.cookies.get('sb-access-token'),
+    refresh: request.cookies.get('sb-refresh-token')
+  })
 
   // Check auth status
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -69,7 +55,8 @@ export async function middleware(request: NextRequest) {
     hasSession: !!session,
     error: sessionError,
     userId: session?.user?.id,
-    path: request.url
+    path: request.url,
+    cookies: request.headers.get('cookie')
   })
 
   // Get the pathname
@@ -102,12 +89,31 @@ export async function middleware(request: NextRequest) {
   }
 
   // For authenticated API routes, check session
-  if (isAuthenticatedApiRoute && !session) {
-    console.log('API auth failed:', { path, hasSession: !!session })
-    return NextResponse.json(
-      { error: 'Not authenticated' },
-      { status: 401 }
-    )
+  if (isAuthenticatedApiRoute) {
+    if (!session) {
+      console.log('API auth failed:', { 
+        path, 
+        hasSession: !!session,
+        cookies: request.headers.get('cookie'),
+        headers: Object.fromEntries(request.headers.entries())
+      })
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { 
+          status: 401,
+          headers: {
+            'WWW-Authenticate': 'Bearer error="invalid_token"',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          }
+        }
+      )
+    }
+    
+    // Add session user to response headers for debugging
+    response.headers.set('x-user-id', session.user.id)
+    response.headers.set('x-session-status', 'valid')
   }
 
   // Special handling for admin routes
@@ -119,11 +125,6 @@ export async function middleware(request: NextRequest) {
       // If not an admin, redirect to home
       return NextResponse.redirect(new URL('/', request.url))
     }
-  }
-
-  // Add session user to response headers for debugging
-  if (session?.user) {
-    response.headers.set('x-user-id', session.user.id)
   }
 
   return response
