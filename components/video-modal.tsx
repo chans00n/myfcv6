@@ -20,6 +20,7 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const playerRef = useRef<YT.Player | null>(null)
@@ -156,6 +157,21 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
     }
   }
 
+  // Handle mute toggle
+  const toggleMute = () => {
+    if (isYouTube && playerRef.current) {
+      if (isMuted) {
+        playerRef.current.unMute()
+      } else {
+        playerRef.current.mute()
+      }
+      setIsMuted(!isMuted)
+    } else if (videoRef.current) {
+      videoRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
+
   // Update time display for regular video
   useEffect(() => {
     if (isYouTube || !videoRef.current) return
@@ -164,24 +180,35 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
 
     const updateTime = () => {
       setCurrentTime(video.currentTime)
-      setDuration(video.duration)
+      if (!duration && video.duration) {
+        setDuration(video.duration)
+      }
     }
 
     const handlePlay = () => setIsPlaying(true)
     const handlePause = () => setIsPlaying(false)
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration)
+      // Start playing when video is loaded
+      if (isOpen) {
+        video.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => console.error("Autoplay failed:", err))
+      }
+    }
 
     video.addEventListener("timeupdate", updateTime)
     video.addEventListener("play", handlePlay)
     video.addEventListener("pause", handlePause)
-    video.addEventListener("loadedmetadata", updateTime)
+    video.addEventListener("loadedmetadata", handleLoadedMetadata)
 
     return () => {
       video.removeEventListener("timeupdate", updateTime)
       video.removeEventListener("play", handlePlay)
       video.removeEventListener("pause", handlePause)
-      video.removeEventListener("loadedmetadata", updateTime)
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata)
     }
-  }, [isOpen, isYouTube])
+  }, [isOpen, isYouTube, duration])
 
   // Auto-play when modal opens
   useEffect(() => {
@@ -223,13 +250,26 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
         onInteractOutside={(e) => e.preventDefault()}
       >
         {!isMobile && (
-          <button
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
-            onClick={() => setIsOpen(false)}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </button>
+          <>
+            <button
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
+              onClick={() => setIsOpen(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </button>
+            <button
+              className="absolute right-14 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
+              onClick={toggleMute}
+            >
+              {isMuted ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6L8 10H4v4h4l4 4zM18 8a6 6 0 0 1 0 8M21 5a10 10 0 0 1 0 14" /></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+              )}
+              <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
+            </button>
+          </>
         )}
         <DialogTitle className="sr-only">{videoTitle || "Video Player"}</DialogTitle>
         {isMobile ? (
@@ -246,11 +286,12 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                   playsInline
                   preload="auto"
                   onClick={togglePlayPause}
+                  muted={isMuted}
                 />
               )}
 
               {/* Top controls - Adjusted positioning */}
-              <div className="fixed top-[env(safe-area-inset-top)] inset-x-0 z-50 p-4">
+              <div className="fixed top-[env(safe-area-inset-top)] inset-x-0 z-50 p-4 flex justify-between">
                 <Button
                   variant="outline"
                   size="icon"
@@ -259,6 +300,19 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                 >
                   <X className="h-6 w-6" />
                   <span className="sr-only">Close</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full bg-black/50 border-0 text-white hover:bg-black/70"
+                  onClick={toggleMute}
+                >
+                  {isMuted ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6L8 10H4v4h4l4 4zM18 8a6 6 0 0 1 0 8M21 5a10 10 0 0 1 0 14" /></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+                  )}
+                  <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
                 </Button>
               </div>
             </div>
@@ -324,7 +378,15 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                 title={videoTitle || "Video"}
               />
             ) : (
-              <video ref={videoRef} src={videoUrl} className="w-full h-full" controls playsInline />
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                className="w-full h-full"
+                controls
+                playsInline
+                preload="auto"
+                muted={isMuted}
+              />
             )}
           </div>
         )}
@@ -373,6 +435,9 @@ declare global {
       getCurrentTime(): number
       getDuration(): number
       destroy(): void
+      mute(): void
+      unMute(): void
+      isMuted(): boolean
     }
   }
 }
