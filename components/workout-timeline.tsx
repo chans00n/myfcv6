@@ -111,15 +111,15 @@ export function WorkoutTimeline({ exercises, onComplete }: WorkoutTimelineProps)
                   >
                     {completedExercises[exercise.id] && <Check className="h-3 w-3" />}
                   </button>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <h3 className="text-lg font-medium truncate">{`${index + 1}. ${exercise.name}`}</h3>
+                      <h3 className="text-lg font-medium break-words">{`${index + 1}. ${exercise.name}`}</h3>
                     </div>
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
                       <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                       <span className="truncate">{exercise.duration}</span>
                     </div>
-                    <p className="mt-2 text-gray-300 line-clamp-3 sm:line-clamp-none">{exercise.description}</p>
+                    <p className="mt-2 text-gray-300 break-words">{exercise.description}</p>
 
                     <button
                       type="button"
@@ -173,7 +173,7 @@ export function WorkoutTimeline({ exercises, onComplete }: WorkoutTimelineProps)
                           {exerciseTips[exercise.id as keyof typeof exerciseTips]?.map((tip, i) => (
                             <li key={i} className="flex items-start gap-2 text-sm">
                               <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                              <span>{tip}</span>
+                              <span className="break-words">{tip}</span>
                             </li>
                           ))}
                         </ul>

@@ -85,10 +85,10 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
   ]
 
   return (
-    <div className="px-4 md:px-6 py-6">
+    <div className="px-4 md:px-6 py-6 max-w-full overflow-x-hidden">
       <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
         {/* Main content - takes up 2/3 of the space on desktop */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-6 min-w-0">
           <div className="aspect-video relative rounded-lg overflow-hidden bg-gray-950 flex items-center justify-center">
             <VideoModal videoUrl={workout.videoUrl}>
               <Button
@@ -103,7 +103,7 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
             </VideoModal>
           </div>
 
-          <div className="grid gap-2">
+          <div className="grid gap-2 min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <div>Duration: {workout.duration}</div>
@@ -130,15 +130,15 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
                 />
               </div>
             </div>
-            <h1 className="text-2xl font-bold">{workout.title}</h1>
-            <p className="text-muted-foreground">{workout.description}</p>
+            <h1 className="text-2xl font-bold break-words">{workout.title}</h1>
+            <p className="text-muted-foreground break-words">{workout.description}</p>
           </div>
 
           <WorkoutTimeline exercises={exercises} />
         </div>
 
         {/* Sidebar content - takes up 1/3 of the space on desktop */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           <DifficultyIndicator level={workout.level} />
           <CoachProfile coach={workout.coach} />
           <WorkoutNotes workoutId={params.id} />
