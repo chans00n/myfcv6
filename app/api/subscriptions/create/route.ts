@@ -23,8 +23,10 @@ export async function POST(request: Request) {
       }
     });
 
-    // Check Authorization header
-    if (authHeader) {
+    let authenticatedUser = session?.user;
+
+    // Check Authorization header if no session
+    if (!authenticatedUser && authHeader) {
       const token = authHeader.replace('Bearer ', '');
       const { data: { user }, error: tokenError } = await supabase.auth.getUser(token);
       
@@ -33,9 +35,26 @@ export async function POST(request: Request) {
           userId: user.id,
           email: user.email
         });
+        authenticatedUser = user;
       } else {
         console.error('Token validation failed:', tokenError);
       }
+    }
+
+    if (!authenticatedUser) {
+      console.error('No authenticated user found');
+      return NextResponse.json(
+        { error: 'Authentication required', details: 'No valid session or token found' },
+        { 
+          status: 401,
+          headers: {
+            'WWW-Authenticate': 'Bearer error="invalid_token"',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          }
+        }
+      );
     }
 
     if (sessionError) {

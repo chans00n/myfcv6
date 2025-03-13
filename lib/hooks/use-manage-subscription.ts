@@ -23,23 +23,30 @@ export function useManageSubscription() {
         const session = await refreshSession();
         if (!session) {
           console.error('Session refresh failed');
-          throw new Error('Please log in to continue');
+          throw new Error('Not authenticated');
         }
         console.log('Session refreshed successfully');
+      }
+
+      // Get a fresh auth token
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('Not authenticated');
       }
 
       // Log request attempt
       console.log('Starting subscription request:', {
         userId: user?.id,
         email: user?.email,
-        hasSession: !!user
+        hasSession: !!user,
+        hasToken: !!token
       });
 
       const response = await fetch('/api/subscriptions/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await getAuthToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           successUrl: `${window.location.origin}/settings?tab=billing&status=success`,
@@ -109,8 +116,16 @@ export function useManageSubscription() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      return session?.access_token;
+      if (error) {
+        console.error('Error getting auth token:', error);
+        return null;
+      }
+      if (!session?.access_token) {
+        console.log('No access token in session, attempting refresh');
+        const refreshResult = await refreshSession();
+        return refreshResult?.access_token || null;
+      }
+      return session.access_token;
     } catch (error) {
       console.error('Error getting auth token:', error);
       return null;

@@ -104,8 +104,10 @@ export async function middleware(request: NextRequest) {
   // Check auth status
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
   
+  let authenticatedUser = session?.user;
+  
   // If no session from cookies, try Authorization header
-  if (!session) {
+  if (!authenticatedUser) {
     const authHeader = request.headers.get('authorization');
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
@@ -116,6 +118,7 @@ export async function middleware(request: NextRequest) {
           userId: user.id,
           email: user.email
         });
+        authenticatedUser = user;
       } else {
         console.error('Token validation failed:', tokenError);
       }
@@ -125,8 +128,9 @@ export async function middleware(request: NextRequest) {
   // Debug session information
   console.log('Session check:', {
     hasSession: !!session,
+    hasAuthenticatedUser: !!authenticatedUser,
     error: sessionError,
-    userId: session?.user?.id,
+    userId: authenticatedUser?.id,
     path: request.url,
     cookies: request.headers.get('cookie'),
     authorization: request.headers.get('authorization') ? 'Bearer [redacted]' : 'none'
@@ -152,8 +156,8 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route => path === route || path.startsWith('/api/auth/'))
   const isAuthenticatedApiRoute = path.startsWith('/api/subscriptions/')
 
-  // If the route is not public and there's no session, redirect to login
-  if (!isPublicRoute && !isAuthenticatedApiRoute && !session) {
+  // If the route is not public and there's no authenticated user, redirect to login
+  if (!isPublicRoute && !isAuthenticatedApiRoute && !authenticatedUser) {
     console.log('Redirecting to login:', { path, isPublicRoute, isAuthenticatedApiRoute })
     const redirectUrl = new URL('/auth/login', request.url)
     // Add the current path as a redirect parameter
@@ -161,12 +165,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // For authenticated API routes, check session
+  // For authenticated API routes, check for authenticated user
   if (isAuthenticatedApiRoute) {
-    if (!session) {
+    if (!authenticatedUser) {
       console.log('API auth failed:', { 
         path, 
-        hasSession: !!session,
+        hasAuthenticatedUser: !!authenticatedUser,
         cookies: request.headers.get('cookie'),
         headers: Object.fromEntries(request.headers.entries())
       })
@@ -180,20 +184,19 @@ export async function middleware(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: 'Not authenticated', details: 'Session not found or invalid' },
+        { error: 'Not authenticated', details: 'No valid session or token found' },
         { status: 401, headers }
       )
     }
     
-    // Add session user to response headers for debugging
-    response.headers.set('x-user-id', session.user.id)
+    // Add authenticated user to response headers for debugging
+    response.headers.set('x-user-id', authenticatedUser.id)
     response.headers.set('x-session-status', 'valid')
   }
 
   // Special handling for admin routes
   if (path.startsWith('/admin')) {
-    const user = session?.user
-    const isAdmin = user?.user_metadata?.role === 'admin'
+    const isAdmin = authenticatedUser?.user_metadata?.role === 'admin'
 
     if (!isAdmin) {
       // If not an admin, redirect to home
