@@ -82,6 +82,7 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
         },
         events: {
           onReady: (event) => {
+            // Force play on ready
             event.target.playVideo()
             setIsPlaying(true)
             setDuration(event.target.getDuration())
@@ -96,6 +97,10 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
             requestAnimationFrame(updateYouTubeProgress)
           },
           onStateChange: (event) => {
+            // If video is cued, play it
+            if (event.data === window.YT.PlayerState.CUED) {
+              event.target.playVideo()
+            }
             setIsPlaying(event.data === window.YT.PlayerState.PLAYING)
             if (event.data === window.YT.PlayerState.ENDED) {
               setCurrentTime(0)
@@ -273,14 +278,16 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
             <div className="flex-1 relative">
               {isYouTube && youtubeId ? (
                 <div id="youtube-player" className="absolute inset-0 w-full h-full bg-black">
-                  <div className="relative w-full h-full">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1&playsinline=1&controls=0&showinfo=0&modestbranding=1&fs=0`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      className="absolute inset-0 w-full h-full"
-                      style={{ border: 'none' }}
-                      title={videoTitle || "Video"}
-                    />
+                  <div className="relative w-full h-full overflow-hidden">
+                    <div className="absolute inset-0" style={{ padding: '56.25% 0 0 0' }}>
+                      <iframe
+                        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1&playsinline=1&controls=0&showinfo=0&modestbranding=1&fs=0`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        className="absolute inset-0 w-[300%] h-[300%] left-[-100%] top-[-100%]"
+                        style={{ border: 'none' }}
+                        title={videoTitle || "Video"}
+                      />
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -375,19 +382,22 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
           </div>
         ) : (
           // Desktop view
-          <div className="aspect-video w-full">
+          <div className="aspect-video w-full overflow-hidden">
             {isYouTube && youtubeId ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                className="w-full h-full"
-                title={videoTitle || "Video"}
-              />
+              <div className="relative w-full h-full" style={{ padding: '56.25% 0 0 0' }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1&playsinline=1&controls=0&showinfo=0&modestbranding=1&fs=0`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  className="absolute inset-0 w-[300%] h-[300%] left-[-100%] top-[-100%]"
+                  style={{ border: 'none' }}
+                  title={videoTitle || "Video"}
+                />
+              </div>
             ) : (
               <video
                 ref={videoRef}
                 src={videoUrl}
-                className="w-full h-full"
+                className="w-full h-full object-cover"
                 controls
                 playsInline
                 preload="auto"
@@ -421,7 +431,7 @@ declare global {
           }
           events?: {
             onReady?(event: { target: YT.Player }): void
-            onStateChange?(event: { data: number }): void
+            onStateChange?(event: { target: YT.Player; data: number }): void
           }
         },
       ) => YT.Player
@@ -429,6 +439,7 @@ declare global {
         PLAYING: number
         PAUSED: number
         ENDED: number
+        CUED: number
       }
     }
     onYouTubeIframeAPIReady?: () => void
