@@ -33,10 +33,13 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          return request.cookies.get(name)?.value
+          const cookie = request.cookies.get(name);
+          console.log('Getting cookie:', { name, value: cookie?.value });
+          return cookie?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
           // Set cookie with proper domain handling
+          console.log('Setting cookie:', { name, domain: isLocalhost ? undefined : `.${domain}` });
           response.cookies.set({
             name,
             value,
@@ -50,6 +53,7 @@ export async function middleware(request: NextRequest) {
         },
         remove(name: string, options: CookieOptions) {
           // Remove cookie with proper domain handling
+          console.log('Removing cookie:', { name, domain: isLocalhost ? undefined : `.${domain}` });
           response.cookies.set({
             name,
             value: '',

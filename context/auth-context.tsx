@@ -39,35 +39,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = async (): Promise<Session | null> => {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession()
+      console.log('Starting session refresh');
+      const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.error('Session error:', error)
-        throw error
+        console.error('Session error:', error);
+        throw error;
       }
 
       if (!session) {
-        setUser(null)
-        return null
+        console.log('No session found');
+        setUser(null);
+        return null;
       }
 
       // Try to refresh the session if it exists
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+      console.log('Attempting to refresh session');
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
       if (refreshError) {
-        console.error('Session refresh error:', refreshError)
-        throw refreshError
+        console.error('Session refresh error:', refreshError);
+        throw refreshError;
       }
 
-      setUser(refreshData.user as User)
-      return refreshData.session
+      if (!refreshData.session) {
+        console.log('No session after refresh');
+        setUser(null);
+        return null;
+      }
+
+      console.log('Session refreshed successfully:', {
+        userId: refreshData.user?.id,
+        hasSession: !!refreshData.session
+      });
+
+      setUser(refreshData.user as User);
+      return refreshData.session;
     } catch (error: any) {
-      console.error('Session refresh failed:', error)
-      setError(error)
-      setUser(null)
-      return null
+      console.error('Session refresh failed:', {
+        error,
+        message: error.message,
+        stack: error.stack
+      });
+      setError(error);
+      setUser(null);
+      return null;
     }
-  }
+  };
 
   useEffect(() => {
     const initializeAuth = async () => {

@@ -18,10 +18,13 @@ export function useManageSubscription() {
     try {
       // First check if we have a valid session
       if (!user) {
+        console.log('No user found, attempting to refresh session');
         const session = await refreshSession();
         if (!session) {
+          console.error('Session refresh failed');
           throw new Error('Please log in to continue');
         }
+        console.log('Session refreshed successfully');
       }
 
       const response = await fetch('/api/subscriptions/create', {
@@ -31,10 +34,22 @@ export function useManageSubscription() {
         },
         body: JSON.stringify({
           successUrl: `${window.location.origin}/settings?tab=billing&status=success`,
-          cancelUrl: `${window.location.origin}/settings?tab=billing&status=cancelled`
+          cancelUrl: `${window.location.origin}/settings?tab=billing&status=cancelled`,
+          planType: 'monthly'
         }),
         credentials: 'include' // Important: include cookies in the request
       });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        console.error('Subscription creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          data,
+          userId: user?.id
+        });
+        throw new Error(data.error || data.details || 'Failed to create checkout session');
+      }
 
       const data = await response.json();
       
@@ -44,10 +59,6 @@ export function useManageSubscription() {
         data,
         userId: user?.id
       });
-
-      if (!response.ok) {
-        throw new Error(data.error || data.details || 'Failed to create checkout session');
-      }
 
       // Redirect to Stripe
       window.location.href = data.url;
