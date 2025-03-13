@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { stripe } from '@/lib/stripe/client';
-import { STRIPE_CONFIG } from '@/lib/stripe/config';
+import { env } from '@/env.mjs';
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { priceId, successUrl, cancelUrl } = await request.json();
+    const { successUrl, cancelUrl } = await request.json();
 
     // Get or create customer
     const { data: profile } = await supabase
@@ -51,14 +51,13 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price: env.STRIPE_PRICE_ID_MONTHLY,
           quantity: 1
         }
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
       subscription_data: {
-        trial_period_days: STRIPE_CONFIG.trial.days,
         metadata: {
           user_id: session.user.id
         }
