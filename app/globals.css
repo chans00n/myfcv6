@@ -15,7 +15,7 @@
 
     /* Lime color palette */
     --primary: 65 70% 62%;
-    --primary-foreground: 65 10% 10%;
+    --primary-foreground: 0 0% 0%;
 
     --secondary: 65 10% 96%;
     --secondary-foreground: 65 10% 15%;
@@ -44,7 +44,7 @@
     --sidebar-accent-foreground: 65 10% 15%;
     --sidebar-border: 65 10% 90%;
     --sidebar-primary: 65 70% 62%;
-    --sidebar-primary-foreground: 65 10% 10%;
+    --sidebar-primary-foreground: 0 0% 0%;
 
     --sat: env(safe-area-inset-top);
     --sar: env(safe-area-inset-right);
@@ -64,7 +64,7 @@
 
     /* Lime color palette for dark mode */
     --primary: 65 70% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
 
     --secondary: 65 10% 15%;
     --secondary-foreground: 65 10% 98%;
@@ -92,7 +92,7 @@
     --sidebar-accent-foreground: 65 70% 90%;
     --sidebar-border: 65 10% 20%;
     --sidebar-primary: 65 70% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 0%;
   }
 }
 
@@ -106,7 +106,7 @@
   --popover: 220 10% 10%;
   --popover-foreground: 220 10% 98%;
   --primary: 65 70% 45%;
-  --primary-foreground: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
   --secondary: 65 10% 15%;
   --secondary-foreground: 65 10% 98%;
   --muted: 65 10% 15%;
@@ -126,13 +126,13 @@
   --sidebar-accent-foreground: 65 70% 90%;
   --sidebar-border: 65 10% 20%;
   --sidebar-primary: 65 70% 45%;
-  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary-foreground: 0 0% 0%;
 }
 
 /* Update this to use lime colors for dark mode with higher specificity */
 html.dark {
   --primary: 65 70% 45% !important;
-  --primary-foreground: 0 0% 100% !important;
+  --primary-foreground: 0 0% 0% !important;
   --accent: 65 50% 25% !important;
   --accent-foreground: 65 70% 90% !important;
   --secondary: 65 10% 15% !important;
@@ -147,7 +147,7 @@ html.dark {
   --input: 65 10% 20% !important;
   --ring: 65 70% 40% !important;
   --sidebar-primary: 65 70% 45% !important;
-  --sidebar-primary-foreground: 0 0% 100% !important;
+  --sidebar-primary-foreground: 0 0% 0% !important;
   --sidebar-accent: 65 50% 25% !important;
   --sidebar-accent-foreground: 65 70% 90% !important;
   --sidebar-border: 65 10% 20% !important;
