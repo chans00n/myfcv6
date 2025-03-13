@@ -8,35 +8,46 @@ export function useManageSubscription() {
   const [isLoading, setIsLoading] = useState(false);
   const { createCheckoutSession, createCustomerPortalSession, cancelSubscription, resumeSubscription } = useSubscription();
 
-  const startSubscription = async (priceId: string) => {
+  const startSubscription = async () => {
     setIsLoading(true);
     try {
-      const data: CreateCheckoutSessionData = {
-        priceId,
-        successUrl: `${window.location.origin}/account`,
-        cancelUrl: `${window.location.origin}/pricing`
-      };
+      const response = await fetch('/api/subscriptions/create', {
+        method: 'POST',
+      });
 
-      const result = await createCheckoutSession(data);
-      if (result?.url) {
-        window.location.href = result.url;
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
       }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error('Error starting subscription:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const manageSubscription = async () => {
+  const manageSubscription = async (data: ManageSubscriptionData = {}) => {
     setIsLoading(true);
     try {
-      const data: ManageSubscriptionData = {
-        returnUrl: `${window.location.origin}/account`
-      };
+      const response = await fetch('/api/subscriptions/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          returnUrl: data.returnUrl || window.location.href,
+        }),
+      });
 
-      const result = await createCustomerPortalSession(data);
-      if (result?.url) {
-        window.location.href = result.url;
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to manage subscription');
       }
+
+      window.location.href = result.url;
+    } catch (error) {
+      console.error('Error managing subscription:', error);
     } finally {
       setIsLoading(false);
     }
