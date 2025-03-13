@@ -250,41 +250,36 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
         onInteractOutside={(e) => e.preventDefault()}
       >
         {!isMobile && (
-          <div className="fixed top-[env(safe-area-inset-top)] inset-x-0 z-50 p-4 flex justify-between">
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full bg-black/50 border-0 text-white hover:bg-black/70"
+          <>
+            <button
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
               onClick={() => setIsOpen(false)}
             >
-              <X className="h-6 w-6" />
+              <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full bg-black/50 border-0 text-white hover:bg-black/70"
+            </button>
+            <button
+              className="absolute right-14 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
               onClick={toggleMute}
             >
               {isMuted ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6L8 10H4v4h4l4 4zM18 8a6 6 0 0 1 0 8M21 5a10 10 0 0 1 0 14" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6L8 10H4v4h4l4 4zM18 8a6 6 0 0 1 0 8M21 5a10 10 0 0 1 0 14" /></svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
               )}
               <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
-            </Button>
-          </div>
+            </button>
+          </>
         )}
         <DialogTitle className="sr-only">{videoTitle || "Video Player"}</DialogTitle>
-        <div className="relative w-full h-[100dvh] bg-black flex">
-          {/* Main content area */}
-          <div className="flex-1 relative">
+        {isMobile ? (
+          <div className="relative w-full h-full bg-black flex flex-col">
             {/* Video container */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex-1 relative">
               {isYouTube && youtubeId ? (
-                <div id="youtube-player" className="relative w-full max-w-[500px] mx-auto h-full bg-black">
+                <div id="youtube-player" className="absolute inset-0 w-full h-full bg-black">
                   <div className="relative w-full h-full overflow-hidden">
-                    <div className="absolute inset-0">
+                    <div className="absolute inset-0" style={{ padding: '56.25% 0 0 0' }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1&playsinline=1&controls=0&showinfo=0&modestbranding=1&fs=0`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -299,7 +294,7 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                 <video
                   ref={videoRef}
                   src={videoUrl}
-                  className="w-full max-w-[500px] h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                   playsInline
                   preload="auto"
                   onClick={togglePlayPause}
@@ -307,70 +302,111 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                   autoPlay
                 />
               )}
-            </div>
 
-            {/* Video controls overlay */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-              {/* Top gradient */}
-              <div className="h-32 bg-gradient-to-b from-black/50 to-transparent" />
-
-              {/* Bottom controls */}
-              <div className="p-6 space-y-4 pointer-events-auto bg-gradient-to-t from-black/50 to-transparent">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-8">
-                    <Button variant="ghost" size="icon" className="text-white" onClick={togglePlayPause}>
-                      {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
-                      <span className="sr-only">{isPlaying ? "Pause" : "Play"}</span>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Slider
-                    value={[currentTime]}
-                    max={duration || 100}
-                    step={0.1}
-                    onValueChange={handleSeek}
-                    className="cursor-pointer"
-                  />
-                  <div className="flex justify-between text-sm text-white">
-                    <span>{formatTime(currentTime)}</span>
-                    <span>{formatTime(duration)}</span>
-                  </div>
-                </div>
+              {/* Top controls - Adjusted positioning */}
+              <div className="fixed top-[env(safe-area-inset-top)] inset-x-0 z-50 p-4 flex justify-between">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full bg-black/50 border-0 text-white hover:bg-black/70"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <X className="h-6 w-6" />
+                  <span className="sr-only">Close</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full bg-black/50 border-0 text-white hover:bg-black/70"
+                  onClick={toggleMute}
+                >
+                  {isMuted ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6L8 10H4v4h4l4 4zM18 8a6 6 0 0 1 0 8M21 5a10 10 0 0 1 0 14" /></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+                  )}
+                  <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
+                </Button>
               </div>
             </div>
-          </div>
 
-          {/* Right side action buttons */}
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white h-12 w-12 rounded-full bg-black/20 hover:bg-black/40"
-              onClick={() => setIsFavorite(!isFavorite)}
-            >
-              <Heart className={`h-7 w-7 ${isFavorite ? "fill-white" : ""}`} />
-              <span className="sr-only">Like</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white h-12 w-12 rounded-full bg-black/20 hover:bg-black/40"
-            >
-              <Share className="h-7 w-7" />
-              <span className="sr-only">Share</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white h-12 w-12 rounded-full bg-black/20 hover:bg-black/40"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
-              <span className="sr-only">Save</span>
-            </Button>
+            {/* Bottom controls */}
+            <div className="bg-black/90 text-white p-4 space-y-4">
+              <div className="flex justify-between items-center">
+                <Button variant="ghost" size="icon" className="text-white">
+                  <Share className="h-6 w-6" />
+                  <span className="sr-only">Share</span>
+                </Button>
+
+                <div className="flex items-center gap-8">
+                  <Button variant="ghost" size="icon" className="text-white" onClick={() => handleSkip(-15)}>
+                    <RotateCcw className="h-6 w-6" />
+                    <span className="sr-only">Rewind 15 seconds</span>
+                  </Button>
+
+                  <Button variant="ghost" size="icon" className="text-white h-12 w-12" onClick={togglePlayPause}>
+                    {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+                    <span className="sr-only">{isPlaying ? "Pause" : "Play"}</span>
+                  </Button>
+
+                  <Button variant="ghost" size="icon" className="text-white" onClick={() => handleSkip(15)}>
+                    <RotateCw className="h-6 w-6" />
+                    <span className="sr-only">Forward 15 seconds</span>
+                  </Button>
+                </div>
+
+                <Button variant="ghost" size="icon" className="text-white" onClick={() => setIsFavorite(!isFavorite)}>
+                  <Heart className={`h-6 w-6 ${isFavorite ? "fill-white" : ""}`} />
+                  <span className="sr-only">Favorite</span>
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Slider
+                  value={[currentTime]}
+                  max={duration || 100}
+                  step={0.1}
+                  onValueChange={handleSeek}
+                  className="cursor-pointer"
+                />
+
+                <div className="flex justify-between text-sm">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+              </div>
+
+              {/* Bottom indicator bar */}
+              <div className="w-1/3 h-1 bg-white/30 rounded-full mx-auto mt-4"></div>
+            </div>
           </div>
-        </div>
+        ) : (
+          // Desktop view
+          <div className="aspect-video w-full overflow-hidden">
+            {isYouTube && youtubeId ? (
+              <div className="relative w-full h-full" style={{ padding: '56.25% 0 0 0' }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1&playsinline=1&controls=0&showinfo=0&modestbranding=1&fs=0`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  className="absolute inset-0 w-[300%] h-[300%] left-[-100%] top-[-100%]"
+                  style={{ border: 'none' }}
+                  title={videoTitle || "Video"}
+                />
+              </div>
+            ) : (
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                className="w-full h-full object-cover"
+                controls
+                playsInline
+                preload="auto"
+                muted={isMuted}
+                autoPlay
+              />
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
