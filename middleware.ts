@@ -6,6 +6,10 @@ export async function middleware(request: NextRequest) {
   // Create a response object to modify
   let response = NextResponse.next()
 
+  // Get the hostname from the request
+  const hostname = request.headers.get('host') || ''
+  const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1')
+
   // Create a Supabase client using server runtime
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,25 +20,37 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          response.cookies.set({
+          // Only set domain for production
+          const cookieOptions = {
             name,
             value,
             ...options,
-            domain: '.myfc.app',
             secure: true,
-            sameSite: 'lax'
-          })
+            sameSite: 'lax' as const
+          }
+          
+          if (!isLocalhost) {
+            cookieOptions.domain = '.myfc.app'
+          }
+          
+          response.cookies.set(cookieOptions)
         },
         remove(name: string, options: CookieOptions) {
-          response.cookies.set({
+          // Only set domain for production
+          const cookieOptions = {
             name,
             value: '',
             ...options,
-            domain: '.myfc.app',
             expires: new Date(0),
             secure: true,
-            sameSite: 'lax'
-          })
+            sameSite: 'lax' as const
+          }
+          
+          if (!isLocalhost) {
+            cookieOptions.domain = '.myfc.app'
+          }
+          
+          response.cookies.set(cookieOptions)
         },
       },
     }
