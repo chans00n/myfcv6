@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/client';
 import { createServerClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
+import { env } from '@/env.mjs';
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
 
 async function updateSubscriptionStatus(
   subscription: Stripe.Subscription,

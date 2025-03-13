@@ -1,15 +1,16 @@
 import { Stripe } from 'stripe';
 import { loadStripe } from '@stripe/stripe-js';
+import { env } from '@/env.mjs';
 
 // Server-side Stripe instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-02-24.acacia',
   typescript: true,
 });
 
 // Client-side Stripe promise
 export const getStripe = () => {
-  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+  const stripePromise = loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
   return stripePromise;
 };
 
