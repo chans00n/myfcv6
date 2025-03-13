@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createServerComponentClient() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +14,14 @@ export async function createServerComponentClient() {
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookieStore.set({
+              name,
+              value,
+              ...options,
+              domain: '.myfc.app',
+              secure: true,
+              sameSite: 'lax'
+            })
           } catch (error) {
             // This can happen if the cookie is set in a Server Component.
             // We can safely ignore this error.
@@ -22,7 +29,13 @@ export async function createServerComponentClient() {
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.delete({ name, ...options })
+            cookieStore.delete({
+              name,
+              ...options,
+              domain: '.myfc.app',
+              secure: true,
+              sameSite: 'lax'
+            })
           } catch (error) {
             // This can happen if the cookie is removed in a Server Component.
             // We can safely ignore this error.

@@ -33,10 +33,10 @@ export function getSupabaseBrowserClient() {
             return value
           },
           set(name: string, value: string, options: CookieOptions) {
-            document.cookie = `${name}=${encodeURIComponent(value)}; path=${options.path ?? '/'}`
+            document.cookie = `${name}=${encodeURIComponent(value)}; path=${options.path ?? '/'}; domain=.myfc.app; secure; samesite=lax`
           },
           remove(name: string, options: CookieOptions) {
-            document.cookie = `${name}=; path=${options.path ?? '/'}; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+            document.cookie = `${name}=; path=${options.path ?? '/'}; domain=.myfc.app; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=lax`
           }
         }
       }
