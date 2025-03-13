@@ -180,18 +180,26 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
 
     const updateTime = () => {
       setCurrentTime(video.currentTime)
-      if (video.duration !== duration) {
-        setDuration(video.duration)
-      }
+      requestAnimationFrame(() => {
+        if (video && !video.paused) {
+          updateTime()
+        }
+      })
     }
 
-    const handlePlay = () => setIsPlaying(true)
+    const handlePlay = () => {
+      setIsPlaying(true)
+      updateTime()
+    }
     const handlePause = () => setIsPlaying(false)
     const handleLoadedMetadata = () => {
       setDuration(video.duration)
       // Start playing when video is loaded
       video.play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setIsPlaying(true)
+          updateTime()
+        })
         .catch(err => console.error("Autoplay failed:", err))
     }
     const handleEnded = () => {
@@ -199,7 +207,6 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
       setIsPlaying(false)
     }
 
-    video.addEventListener("timeupdate", updateTime)
     video.addEventListener("play", handlePlay)
     video.addEventListener("pause", handlePause)
     video.addEventListener("loadedmetadata", handleLoadedMetadata)
@@ -211,13 +218,12 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
     }
 
     return () => {
-      video.removeEventListener("timeupdate", updateTime)
       video.removeEventListener("play", handlePlay)
       video.removeEventListener("pause", handlePause)
       video.removeEventListener("loadedmetadata", handleLoadedMetadata)
       video.removeEventListener("ended", handleEnded)
     }
-  }, [isOpen, isYouTube, duration])
+  }, [isOpen, isYouTube])
 
   // Clean up when modal closes
   useEffect(() => {
@@ -266,7 +272,17 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
             {/* Video container */}
             <div className="flex-1 relative">
               {isYouTube && youtubeId ? (
-                <div id="youtube-player" className="absolute inset-0 w-full h-full"></div>
+                <div id="youtube-player" className="absolute inset-0 w-full h-full bg-black">
+                  <div className="relative w-full h-full">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1&playsinline=1&controls=0&showinfo=0&modestbranding=1&fs=0`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      className="absolute inset-0 w-full h-full"
+                      style={{ border: 'none' }}
+                      title={videoTitle || "Video"}
+                    />
+                  </div>
+                </div>
               ) : (
                 <video
                   ref={videoRef}
