@@ -11,20 +11,23 @@ const MobileNavWrapper = dynamic(() => import("@/components/mobile-nav-wrapper")
 const PWAInitializer = dynamic(() => import("./pwa-init").then(mod => mod.PWAInitializer), { ssr: false })
 const PWAInstallPrompt = dynamic(() => import("@/components/pwa-install-prompt").then(mod => mod.PWAInstallPrompt), { ssr: false })
 const AuthProvider = dynamic(() => import("@/context/auth-context").then(mod => mod.AuthProvider), { ssr: false })
+const SubscriptionProvider = dynamic(() => import("@/lib/context/subscription-context").then(mod => mod.SubscriptionProvider), { ssr: false })
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider defaultTheme="dark">
       <AuthProvider>
-        <SidebarProvider>
-          <FavoritesProvider>
-            <Toaster richColors position="top-center" />
-            <PWAInitializer />
-            {children}
-            <MobileNavWrapper />
-            <PWAInstallPrompt />
-          </FavoritesProvider>
-        </SidebarProvider>
+        <SubscriptionProvider>
+          <SidebarProvider>
+            <FavoritesProvider>
+              <Toaster richColors position="top-center" />
+              <PWAInitializer />
+              {children}
+              <MobileNavWrapper />
+              <PWAInstallPrompt />
+            </FavoritesProvider>
+          </SidebarProvider>
+        </SubscriptionProvider>
       </AuthProvider>
     </ThemeProvider>
   )
