@@ -29,25 +29,54 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
+      try {
+        // Try to get the session
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Session error:', error)
+          // If there's an error getting the session, try to refresh it
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+          if (refreshError) {
+            console.error('Session refresh error:', refreshError)
+            setUser(null)
+          } else {
+            setUser(refreshData.user as User)
+          }
+        } else {
+          setUser(session?.user as User ?? null)
+        }
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null)
-      })
+        // Set up auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('Auth state change:', event, session?.user?.id)
+          if (event === 'SIGNED_OUT') {
+            setUser(null)
+            router.push('/auth/login')
+          } else if (session?.user) {
+            setUser(session.user as User)
+          }
+        })
 
-      return () => {
-        subscription.unsubscribe()
+        setIsInitialized(true)
+        return () => {
+          subscription.unsubscribe()
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error)
+        setUser(null)
+        setIsInitialized(true)
       }
     }
 
     initializeAuth()
-  }, [supabase.auth])
+  }, [supabase.auth, router])
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -87,14 +116,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to clear auth cookies')
+        console.error('Failed to clear auth cookies:', await response.text())
       }
 
       // Then sign out on the client
       const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      if (error) {
+        console.error('Supabase signOut error:', error)
+      }
 
-      // Clear user state
+      // Clear user state regardless of errors
       setUser(null)
 
       // Redirect to login
@@ -105,6 +136,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push("/auth/login")
       throw error
     }
+  }
+
+  // Don't render until we've initialized auth
+  if (!isInitialized) {
+    return null
   }
 
   return (
