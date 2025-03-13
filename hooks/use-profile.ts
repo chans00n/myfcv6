@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 import { useAuth } from "@/context/auth-context"
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
 import type { Database } from "@/types/supabase"
@@ -16,14 +16,9 @@ export type Profile = {
   updated_at: string
 }
 
-// Create a singleton instance of the Supabase client
-const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 export function useProfile() {
   const { user } = useAuth()
+  const supabase = getSupabaseBrowserClient()
 
   const getProfile = useCallback(async () => {
     try {
@@ -62,7 +57,7 @@ export function useProfile() {
       toast.error("Failed to fetch profile")
       return null
     }
-  }, [user])
+  }, [user, supabase])
 
   const updateProfile = useCallback(
     async (updates: Partial<Profile>) => {
