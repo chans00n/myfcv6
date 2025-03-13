@@ -8,7 +8,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ['myfacecoach.vercel.app', 'hebbkx1anhila5yf.public.blob.vercel-storage.com'],
+    domains: ['myfacecoach.vercel.app', 'hebbkx1anhila5yf.public.blob.vercel-storage.com', 'members.myfc.app'],
     unoptimized: true,
   },
   experimental: {
@@ -49,34 +49,37 @@ const nextConfig = {
   },
 }
 
-let userConfig = undefined
+function mergeConfig(baseConfig, userConfig) {
+  if (!userConfig) {
+    return baseConfig
+  }
+
+  const mergedConfig = { ...baseConfig }
+
+  for (const key in userConfig) {
+    if (
+      typeof baseConfig[key] === 'object' &&
+      !Array.isArray(baseConfig[key])
+    ) {
+      mergedConfig[key] = {
+        ...baseConfig[key],
+        ...userConfig[key],
+      }
+    } else {
+      mergedConfig[key] = userConfig[key]
+    }
+  }
+
+  return mergedConfig
+}
+
+let finalConfig = nextConfig
 try {
-  userConfig = await import('./v0-user-next.config')
+  const { default: userConfig } = await import('./v0-user-next.config')
+  finalConfig = mergeConfig(nextConfig, userConfig)
 } catch (e) {
   // ignore error
 }
 
-mergeConfig(nextConfig, userConfig)
-
-function mergeConfig(nextConfig, userConfig) {
-  if (!userConfig) {
-    return
-  }
-
-  for (const key in userConfig) {
-    if (
-      typeof nextConfig[key] === 'object' &&
-      !Array.isArray(nextConfig[key])
-    ) {
-      nextConfig[key] = {
-        ...nextConfig[key],
-        ...userConfig[key],
-      }
-    } else {
-      nextConfig[key] = userConfig[key]
-    }
-  }
-}
-
-export default nextConfig
+export default finalConfig
 
