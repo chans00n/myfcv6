@@ -84,23 +84,23 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
           onReady: (event) => {
             event.target.playVideo()
             setIsPlaying(true)
-            // Get duration
             setDuration(event.target.getDuration())
 
             // Start progress tracking
             const updateYouTubeProgress = () => {
-              if (playerRef.current) {
+              if (playerRef.current && isOpen) {
                 setCurrentTime(playerRef.current.getCurrentTime())
-                if (isOpen) {
-                  requestAnimationFrame(updateYouTubeProgress)
-                }
+                requestAnimationFrame(updateYouTubeProgress)
               }
             }
             requestAnimationFrame(updateYouTubeProgress)
           },
           onStateChange: (event) => {
-            // Update playing state based on player state
             setIsPlaying(event.data === window.YT.PlayerState.PLAYING)
+            if (event.data === window.YT.PlayerState.ENDED) {
+              setCurrentTime(0)
+              setIsPlaying(false)
+            }
           },
         },
       })
@@ -174,13 +174,13 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
 
   // Update time display for regular video
   useEffect(() => {
-    if (isYouTube || !videoRef.current) return
+    if (isYouTube || !videoRef.current || !isOpen) return
 
     const video = videoRef.current
 
     const updateTime = () => {
       setCurrentTime(video.currentTime)
-      if (!duration && video.duration) {
+      if (video.duration !== duration) {
         setDuration(video.duration)
       }
     }
@@ -190,45 +190,34 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
     const handleLoadedMetadata = () => {
       setDuration(video.duration)
       // Start playing when video is loaded
-      if (isOpen) {
-        video.play()
-          .then(() => setIsPlaying(true))
-          .catch(err => console.error("Autoplay failed:", err))
-      }
+      video.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => console.error("Autoplay failed:", err))
+    }
+    const handleEnded = () => {
+      setCurrentTime(0)
+      setIsPlaying(false)
     }
 
     video.addEventListener("timeupdate", updateTime)
     video.addEventListener("play", handlePlay)
     video.addEventListener("pause", handlePause)
     video.addEventListener("loadedmetadata", handleLoadedMetadata)
+    video.addEventListener("ended", handleEnded)
+
+    // Try to play immediately if the video is already loaded
+    if (video.readyState >= 2) {
+      handleLoadedMetadata()
+    }
 
     return () => {
       video.removeEventListener("timeupdate", updateTime)
       video.removeEventListener("play", handlePlay)
       video.removeEventListener("pause", handlePause)
       video.removeEventListener("loadedmetadata", handleLoadedMetadata)
+      video.removeEventListener("ended", handleEnded)
     }
   }, [isOpen, isYouTube, duration])
-
-  // Auto-play when modal opens
-  useEffect(() => {
-    if (!isOpen) return
-
-    if (!isYouTube && videoRef.current) {
-      videoRef.current.load()
-      const timer = setTimeout(() => {
-        videoRef.current
-          ?.play()
-          .then(() => setIsPlaying(true))
-          .catch((err) => {
-            console.error("Autoplay failed:", err)
-            setIsPlaying(false)
-          })
-      }, 300)
-
-      return () => clearTimeout(timer)
-    }
-  }, [isOpen, isYouTube])
 
   // Clean up when modal closes
   useEffect(() => {
@@ -287,6 +276,7 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                   preload="auto"
                   onClick={togglePlayPause}
                   muted={isMuted}
+                  autoPlay
                 />
               )}
 
@@ -372,7 +362,7 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
           <div className="aspect-video w-full">
             {isYouTube && youtubeId ? (
               <iframe
-                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
+                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&enablejsapi=1`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 className="w-full h-full"
                 title={videoTitle || "Video"}
@@ -386,6 +376,7 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                 playsInline
                 preload="auto"
                 muted={isMuted}
+                autoPlay
               />
             )}
           </div>
