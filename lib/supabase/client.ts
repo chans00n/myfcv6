@@ -26,8 +26,20 @@ export function getSupabaseBrowserClient() {
           storage: {
             getItem: (key) => {
               try {
-                const value = localStorage.getItem(key)
-                return value ? JSON.parse(value) : null
+                const item = localStorage.getItem(key)
+                if (!item) return null
+                
+                // If it's a base64 string, return it as is
+                if (item.startsWith('base64-')) {
+                  return item
+                }
+                
+                // Try to parse as JSON
+                try {
+                  return JSON.parse(item)
+                } catch {
+                  return item
+                }
               } catch (error) {
                 console.error('Error reading from localStorage:', error)
                 return null
@@ -35,7 +47,11 @@ export function getSupabaseBrowserClient() {
             },
             setItem: (key, value) => {
               try {
-                localStorage.setItem(key, JSON.stringify(value))
+                if (typeof value === 'string' && value.startsWith('base64-')) {
+                  localStorage.setItem(key, value)
+                } else {
+                  localStorage.setItem(key, JSON.stringify(value))
+                }
               } catch (error) {
                 console.error('Error writing to localStorage:', error)
               }
@@ -81,14 +97,16 @@ export function getSupabaseBrowserClient() {
                 cookieValue = JSON.stringify(value)
               }
               
-              document.cookie = `${name}=${encodeURIComponent(cookieValue)}; path=${options.path ?? '/'}; domain=.myfc.app; secure; samesite=lax`
+              const domain = window.location.hostname
+              document.cookie = `${name}=${encodeURIComponent(cookieValue)}; path=${options.path ?? '/'}; domain=${domain}; secure; samesite=lax`
             } catch (error) {
               console.error('Error setting cookie:', error)
             }
           },
           remove(name: string, options: CookieOptions) {
             try {
-              document.cookie = `${name}=; path=${options.path ?? '/'}; domain=.myfc.app; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=lax`
+              const domain = window.location.hostname
+              document.cookie = `${name}=; path=${options.path ?? '/'}; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=lax`
             } catch (error) {
               console.error('Error removing cookie:', error)
             }

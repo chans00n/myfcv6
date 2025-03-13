@@ -9,7 +9,6 @@ export async function middleware(request: NextRequest) {
   // Get the hostname from the request
   const hostname = request.headers.get('host') || ''
   const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1')
-  const isMembers = hostname.includes('members.myfc.app')
 
   // Create a Supabase client using server runtime
   const supabase = createServerClient(
@@ -27,14 +26,8 @@ export async function middleware(request: NextRequest) {
             ...options,
             secure: true,
             sameSite: 'lax' as const,
-            path: '/'
-          }
-          
-          // Set appropriate domain based on environment
-          if (isMembers) {
-            cookieOptions.domain = 'members.myfc.app'
-          } else if (!isLocalhost) {
-            cookieOptions.domain = '.myfc.app'
+            path: '/',
+            domain: isLocalhost ? undefined : hostname
           }
           
           response.cookies.set(cookieOptions)
@@ -47,14 +40,8 @@ export async function middleware(request: NextRequest) {
             expires: new Date(0),
             secure: true,
             sameSite: 'lax' as const,
-            path: '/'
-          }
-          
-          // Set appropriate domain based on environment
-          if (isMembers) {
-            cookieOptions.domain = 'members.myfc.app'
-          } else if (!isLocalhost) {
-            cookieOptions.domain = '.myfc.app'
+            path: '/',
+            domain: isLocalhost ? undefined : hostname
           }
           
           response.cookies.set(cookieOptions)
