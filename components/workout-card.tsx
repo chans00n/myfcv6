@@ -22,7 +22,7 @@ interface WorkoutCardProps {
 
 export function WorkoutCard({ workout }: WorkoutCardProps) {
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-all group border-transparent hover:border-primary/20 hover:bg-primary/5">
+    <Card className="overflow-hidden hover:shadow-md transition-all group border border-border/40 hover:border-primary/20 hover:bg-primary/5">
       <div className="flex flex-col sm:flex-row h-full">
         <div className="relative w-full sm:w-64 shrink-0">
           <Link href={`/workouts/${workout.id}`}>
