@@ -123,6 +123,12 @@ export function BillingSettings() {
   const [isRetryingInvoices, setIsRetryingInvoices] = useState(false);
 
   const fetchPaymentMethods = async () => {
+    if (!subscription) {
+      setPaymentMethods([]);
+      setIsLoadingPaymentMethods(false);
+      return;
+    }
+
     try {
       setPaymentMethodsError(null);
       setIsRetryingPaymentMethods(true);
@@ -132,19 +138,9 @@ export function BillingSettings() {
       }
       const data = await response.json();
       setPaymentMethods(data.paymentMethods);
-      toast.success('Payment methods loaded successfully', {
-        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-        description: `Found ${data.paymentMethods.length} payment method(s)`,
-        className: "bg-background border-border",
-      });
     } catch (error) {
       console.error('Error fetching payment methods:', error);
       setPaymentMethodsError({ message: 'Failed to load payment methods' });
-      toast.error('Failed to load payment methods', {
-        icon: <XCircle className="h-4 w-4 text-destructive" />,
-        description: 'Please try again or contact support if the issue persists',
-        className: "bg-background border-border",
-      });
     } finally {
       setIsLoadingPaymentMethods(false);
       setIsRetryingPaymentMethods(false);
@@ -152,6 +148,12 @@ export function BillingSettings() {
   };
 
   const fetchInvoices = async () => {
+    if (!subscription) {
+      setInvoices([]);
+      setIsLoadingInvoices(false);
+      return;
+    }
+
     try {
       setInvoicesError(null);
       setIsRetryingInvoices(true);
@@ -161,19 +163,9 @@ export function BillingSettings() {
       }
       const data = await response.json();
       setInvoices(data.invoices);
-      toast.success('Billing history loaded successfully', {
-        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-        description: `Found ${data.invoices.length} invoice(s)`,
-        className: "bg-background border-border",
-      });
     } catch (error) {
       console.error('Error fetching invoices:', error);
       setInvoicesError({ message: 'Failed to load billing history' });
-      toast.error('Failed to load billing history', {
-        icon: <XCircle className="h-4 w-4 text-destructive" />,
-        description: 'Please try again or contact support if the issue persists',
-        className: "bg-background border-border",
-      });
     } finally {
       setIsLoadingInvoices(false);
       setIsRetryingInvoices(false);
@@ -184,7 +176,7 @@ export function BillingSettings() {
     if (!user) return;
     fetchPaymentMethods();
     fetchInvoices();
-  }, [user]);
+  }, [user, subscription]);
 
   const formatAmount = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -231,7 +223,7 @@ export function BillingSettings() {
     }
   };
 
-  if (isLoadingSubscription || isLoadingPaymentMethods || isLoadingInvoices) {
+  if (isLoadingSubscription) {
     return (
       <div className="space-y-6">
         <SkeletonCard />
@@ -243,21 +235,6 @@ export function BillingSettings() {
 
   return (
     <div className="space-y-6">
-      {subscriptionError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription className="flex items-center justify-between">
-            <span>{subscriptionError.message}</span>
-            <RetryButton
-              onClick={() => window.location.reload()}
-              isLoading={false}
-              className="ml-4"
-            />
-          </AlertDescription>
-        </Alert>
-      )}
-
       <Card>
         <CardHeader>
           <CardTitle>Subscription Status</CardTitle>
@@ -300,95 +277,113 @@ export function BillingSettings() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Methods</CardTitle>
-          <CardDescription>Manage your payment methods</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {paymentMethodsError ? (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription className="flex items-center justify-between">
-                <span>{paymentMethodsError.message}</span>
-                <RetryButton onClick={fetchPaymentMethods} isLoading={isRetryingPaymentMethods} className="ml-4" />
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-4">
-              {paymentMethods.map((method) => (
-                <div key={method.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {getCardIcon(method.brand)}
-                    <div>
-                      <p className="font-medium">
-                        {method.brand.charAt(0).toUpperCase() + method.brand.slice(1)} ending in {method.last4}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Expires {method.expMonth.toString().padStart(2, '0')}/{method.expYear}
-                      </p>
+      {subscription && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Methods</CardTitle>
+              <CardDescription>Manage your payment methods</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingPaymentMethods ? (
+                <div className="space-y-4">
+                  <PaymentMethodSkeleton />
+                  <PaymentMethodSkeleton />
+                </div>
+              ) : paymentMethodsError ? (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{paymentMethodsError.message}</span>
+                    <RetryButton onClick={fetchPaymentMethods} isLoading={isRetryingPaymentMethods} className="ml-4" />
+                  </AlertDescription>
+                </Alert>
+              ) : paymentMethods.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No payment methods found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {paymentMethods.map((method) => (
+                    <div key={method.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        {getCardIcon(method.brand)}
+                        <div>
+                          <p className="font-medium">
+                            {method.brand.charAt(0).toUpperCase() + method.brand.slice(1)} ending in {method.last4}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Expires {method.expMonth.toString().padStart(2, '0')}/{method.expYear}
+                          </p>
+                        </div>
+                      </div>
+                      {method.isDefault && (
+                        <Badge variant="outline" className="text-xs">
+                          Default
+                        </Badge>
+                      )}
                     </div>
-                  </div>
-                  {method.isDefault && (
-                    <Badge variant="outline" className="text-xs">
-                      Default
-                    </Badge>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Billing History</CardTitle>
-          <CardDescription>View and download your invoices</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {invoicesError ? (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription className="flex items-center justify-between">
-                <span>{invoicesError.message}</span>
-                <RetryButton onClick={fetchInvoices} isLoading={isRetryingInvoices} className="ml-4" />
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-4">
-              {invoices.map((invoice) => (
-                <div key={invoice.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{formatDate(invoice.created * 1000)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatAmount(invoice.amount, invoice.currency)} - {invoice.status}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {invoice.hostedInvoiceUrl && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={invoice.hostedInvoiceUrl} target="_blank" rel="noopener noreferrer">
-                          View
-                        </a>
-                      </Button>
-                    )}
-                    {invoice.pdfUrl && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer">
-                          PDF
-                        </a>
-                      </Button>
-                    )}
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing History</CardTitle>
+              <CardDescription>View and download your invoices</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingInvoices ? (
+                <div className="space-y-4">
+                  <InvoiceSkeleton />
+                  <InvoiceSkeleton />
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              ) : invoicesError ? (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{invoicesError.message}</span>
+                    <RetryButton onClick={fetchInvoices} isLoading={isRetryingInvoices} className="ml-4" />
+                  </AlertDescription>
+                </Alert>
+              ) : invoices.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No billing history available.</p>
+              ) : (
+                <div className="space-y-4">
+                  {invoices.map((invoice) => (
+                    <div key={invoice.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{formatDate(invoice.created * 1000)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatAmount(invoice.amount, invoice.currency)} - {invoice.status}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {invoice.hostedInvoiceUrl && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={invoice.hostedInvoiceUrl} target="_blank" rel="noopener noreferrer">
+                              View
+                            </a>
+                          </Button>
+                        )}
+                        {invoice.pdfUrl && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer">
+                              PDF
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
