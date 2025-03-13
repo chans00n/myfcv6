@@ -20,39 +20,40 @@ export function getSupabaseBrowserClient() {
               try {
                 const item = localStorage.getItem(key)
                 if (!item) return null
-                
-                // If it's a base64 string, return it as is
+
+                // Handle base64 encoded session data
                 if (item.startsWith('base64-')) {
-                  return item
+                  return item.replace('base64-', '')
                 }
-                
-                // Try to parse as JSON
+
+                // For other items, try parsing as JSON
                 try {
                   return JSON.parse(item)
                 } catch {
                   return item
                 }
               } catch (error) {
-                console.error('Error reading from localStorage:', error)
+                console.error('Storage getItem error:', { key, error })
                 return null
               }
             },
             setItem: (key, value) => {
               try {
-                if (typeof value === 'string' && value.startsWith('base64-')) {
-                  localStorage.setItem(key, value)
+                // If it's already a string and looks like base64, store it directly
+                if (typeof value === 'string' && /^[A-Za-z0-9+/=]+$/.test(value)) {
+                  localStorage.setItem(key, `base64-${value}`)
                 } else {
                   localStorage.setItem(key, JSON.stringify(value))
                 }
               } catch (error) {
-                console.error('Error writing to localStorage:', error)
+                console.error('Storage setItem error:', { key, error })
               }
             },
             removeItem: (key) => {
               try {
                 localStorage.removeItem(key)
               } catch (error) {
-                console.error('Error removing from localStorage:', error)
+                console.error('Storage removeItem error:', { key, error })
               }
             }
           }
@@ -60,30 +61,59 @@ export function getSupabaseBrowserClient() {
         cookies: {
           get(name: string) {
             try {
-              const cookies = document.cookie.split(';')
-              const cookie = cookies.find(c => c.trim().startsWith(name + '='))
-              return cookie ? decodeURIComponent(cookie.split('=')[1]) : null
+              const cookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith(`${name}=`))
+              
+              if (!cookie) return null
+              
+              const value = cookie.split('=')[1]
+              return decodeURIComponent(value)
             } catch (error) {
-              console.error('Error reading cookie:', error)
+              console.error('Cookie get error:', { name, error })
               return null
             }
           },
           set(name: string, value: string, options: CookieOptions) {
             try {
               const domain = window.location.hostname
-              const isLocalhost = domain.includes('localhost') || domain.includes('127.0.0.1')
-              document.cookie = `${name}=${encodeURIComponent(value)}; path=${options.path ?? '/'}; domain=${isLocalhost ? undefined : `.${domain}`}; secure=${process.env.NODE_ENV === 'production'}; samesite=lax; max-age=${60 * 60 * 24 * 7}`
+              const isLocalhost = domain === 'localhost' || domain === '127.0.0.1'
+              const cookieStr = [
+                `${name}=${encodeURIComponent(value)}`,
+                `path=${options.path ?? '/'}`,
+                !isLocalhost && `domain=.${domain}`,
+                process.env.NODE_ENV === 'production' && 'secure',
+                'samesite=lax',
+                options.maxAge && `max-age=${options.maxAge}`
+              ]
+                .filter(Boolean)
+                .join('; ')
+
+              document.cookie = cookieStr
+              console.log('Cookie set:', { name, domain, isLocalhost })
             } catch (error) {
-              console.error('Error setting cookie:', error)
+              console.error('Cookie set error:', { name, error })
             }
           },
           remove(name: string, options: CookieOptions) {
             try {
               const domain = window.location.hostname
-              const isLocalhost = domain.includes('localhost') || domain.includes('127.0.0.1')
-              document.cookie = `${name}=; path=${options.path ?? '/'}; domain=${isLocalhost ? undefined : `.${domain}`}; secure=${process.env.NODE_ENV === 'production'}; samesite=lax; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+              const isLocalhost = domain === 'localhost' || domain === '127.0.0.1'
+              const cookieStr = [
+                `${name}=`,
+                `path=${options.path ?? '/'}`,
+                !isLocalhost && `domain=.${domain}`,
+                process.env.NODE_ENV === 'production' && 'secure',
+                'samesite=lax',
+                'expires=Thu, 01 Jan 1970 00:00:00 GMT'
+              ]
+                .filter(Boolean)
+                .join('; ')
+
+              document.cookie = cookieStr
+              console.log('Cookie removed:', { name, domain, isLocalhost })
             } catch (error) {
-              console.error('Error removing cookie:', error)
+              console.error('Cookie remove error:', { name, error })
             }
           }
         }
