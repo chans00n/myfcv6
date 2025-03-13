@@ -27,7 +27,7 @@ export function MobileNav() {
   const logoSrc = "https://framerusercontent.com/images/rZbcSd5yZL0dqzWGUJ9UpRh2ToY.jpg"
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="grid grid-cols-5 items-center">
         {/* Lifts */}
         <Link

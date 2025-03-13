@@ -174,14 +174,25 @@ html.dark {
 
 /* Ensure content is properly positioned on iOS */
 @media screen and (display-mode: standalone) {
+  body {
+    height: 100%;
+    overflow: auto;
+  }
+  
   main {
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(var(--sab) + 60px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 60px);
+  }
+
+  /* Adjust for mobile nav at bottom */
+  .mobile-nav-padding {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 60px);
   }
 
   .sidebar-inset {
     height: 100%;
     overflow: auto;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 60px);
   }
 }
 
