@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useUser } from '@/lib/hooks/use-user';
 
 export interface Subscription {
@@ -9,6 +9,10 @@ export interface Subscription {
   plan: string;
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
+  isActive?: boolean;
+  isTrialing?: boolean;
+  isPastDue?: boolean;
+  isCanceled?: boolean;
 }
 
 interface SubscriptionContextType {
@@ -24,6 +28,16 @@ export const SubscriptionContext = createContext<SubscriptionContextType>({
   error: null,
   refetch: async () => {},
 });
+
+export function useSubscription() {
+  const context = useContext(SubscriptionContext);
+
+  if (!context) {
+    throw new Error('useSubscription must be used within a SubscriptionProvider');
+  }
+
+  return context;
+}
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
@@ -45,7 +59,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
 
       const data = await response.json();
-      setSubscription(data.subscription);
+      setSubscription({
+        ...data.subscription,
+        isActive: ['active', 'trialing'].includes(data.subscription?.status),
+        isTrialing: data.subscription?.status === 'trialing',
+        isPastDue: data.subscription?.status === 'past_due',
+        isCanceled: data.subscription?.status === 'canceled',
+      });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
     } finally {

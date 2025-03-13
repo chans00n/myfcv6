@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useSubscription } from '@/lib/context/subscription-context';
-import type { CreateCheckoutSessionData, ManageSubscriptionData } from '@/lib/types/subscription';
+import type { ManageSubscriptionData } from '@/lib/types/subscription';
 
 export function useManageSubscription() {
   const [isLoading, setIsLoading] = useState(false);
-  const { createCheckoutSession, createCustomerPortalSession, cancelSubscription, resumeSubscription } = useSubscription();
+  const { refetch } = useSubscription();
 
   const startSubscription = async () => {
     setIsLoading(true);
@@ -23,6 +23,7 @@ export function useManageSubscription() {
       window.location.href = data.url;
     } catch (error) {
       console.error('Error starting subscription:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -48,24 +49,47 @@ export function useManageSubscription() {
       window.location.href = result.url;
     } catch (error) {
       console.error('Error managing subscription:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const cancelCurrentSubscription = async () => {
+  const cancelSubscription = async () => {
     setIsLoading(true);
     try {
-      await cancelSubscription();
+      const response = await fetch('/api/subscriptions/cancel', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel subscription');
+      }
+
+      await refetch();
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resumeCurrentSubscription = async () => {
+  const resumeSubscription = async () => {
     setIsLoading(true);
     try {
-      await resumeSubscription();
+      const response = await fetch('/api/subscriptions/resume', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to resume subscription');
+      }
+
+      await refetch();
+    } catch (error) {
+      console.error('Error resuming subscription:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +99,7 @@ export function useManageSubscription() {
     isLoading,
     startSubscription,
     manageSubscription,
-    cancelCurrentSubscription,
-    resumeCurrentSubscription
+    cancelSubscription,
+    resumeSubscription
   };
 } 
