@@ -1,3 +1,5 @@
+'use client';
+
 import { useSubscription } from '@/lib/context/subscription-context';
 
 export function useSubscriptionStatus() {

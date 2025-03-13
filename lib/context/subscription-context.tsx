@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/hooks/use-user';
@@ -8,10 +10,8 @@ interface SubscriptionContextType {
   subscription: SubscriptionDetails | null;
   isLoading: boolean;
   error: SubscriptionError | null;
-  createCheckoutSession: (data: CreateCheckoutSessionData) => Promise<{ url: string } | null>;
-  createCustomerPortalSession: (data: ManageSubscriptionData) => Promise<{ url: string } | null>;
-  cancelSubscription: () => Promise<void>;
-  resumeSubscription: () => Promise<void>;
+  createCheckoutSession: (data: CreateCheckoutSessionData) => Promise<{ url: string } | { error: string }>;
+  manageSubscription: (data?: ManageSubscriptionData) => Promise<{ url: string } | { error: string }>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -25,38 +25,41 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    if (!user) {
-      setSubscription(null);
-      setIsLoading(false);
-      return;
-    }
-
     async function loadSubscription() {
+      if (!user?.id) {
+        setSubscription(null);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_status, subscription_id, subscription_ends_at, cancel_at_period_end, stripe_customer_id')
+          .select('subscription_id, stripe_customer_id')
           .eq('id', user.id)
           .single();
 
-        if (profile) {
-          const subscriptionDetails: SubscriptionDetails = {
-            id: profile.subscription_id || '',
-            status: profile.subscription_status as any || 'incomplete',
-            plan: 'monthly', // This should be determined from the Stripe subscription
-            currentPeriodEnd: profile.subscription_ends_at ? new Date(profile.subscription_ends_at) : new Date(),
-            cancelAtPeriodEnd: profile.cancel_at_period_end || false,
-            stripeCustomerId: profile.stripe_customer_id,
-            isCanceled: profile.subscription_status === 'canceled',
-            isActive: ['active', 'trialing'].includes(profile.subscription_status || ''),
-            isTrialing: profile.subscription_status === 'trialing',
-            isPastDue: profile.subscription_status === 'past_due'
-          };
-          setSubscription(subscriptionDetails);
+        if (!profile?.subscription_id) {
+          setSubscription(null);
+          setIsLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error('Error loading subscription:', err);
-        setError({ message: 'Failed to load subscription details' });
+
+        const response = await fetch('/api/subscriptions/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscriptionId: profile.subscription_id }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load subscription status');
+        }
+
+        const data = await response.json();
+        setSubscription(data.subscription);
+      } catch (error) {
+        console.error('Error loading subscription:', error);
+        setError({ message: 'Failed to load subscription status' });
       } finally {
         setIsLoading(false);
       }
@@ -70,80 +73,40 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       const response = await fetch('/api/subscriptions/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to create checkout session');
+        throw new Error(result.error || 'Failed to create checkout session');
       }
 
-      return result;
-    } catch (err) {
-      console.error('Error creating checkout session:', err);
-      setError({ message: 'Failed to create checkout session' });
-      return null;
+      return { url: result.url };
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      return { error: 'Failed to create checkout session' };
     }
   };
 
-  const createCustomerPortalSession = async (data: ManageSubscriptionData) => {
+  const manageSubscription = async (data: ManageSubscriptionData = {}) => {
     try {
       const response = await fetch('/api/subscriptions/manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, returnUrl: window.location.href }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to create portal session');
+        throw new Error(result.error || 'Failed to manage subscription');
       }
 
-      return result;
-    } catch (err) {
-      console.error('Error creating portal session:', err);
-      setError({ message: 'Failed to access subscription management' });
-      return null;
-    }
-  };
-
-  const cancelSubscription = async () => {
-    try {
-      const response = await fetch('/api/subscriptions/cancel', {
-        method: 'POST'
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to cancel subscription');
-      }
-
-      // Refresh subscription data
-      router.refresh();
-    } catch (err) {
-      console.error('Error canceling subscription:', err);
-      setError({ message: 'Failed to cancel subscription' });
-    }
-  };
-
-  const resumeSubscription = async () => {
-    try {
-      const response = await fetch('/api/subscriptions/resume', {
-        method: 'POST'
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to resume subscription');
-      }
-
-      // Refresh subscription data
-      router.refresh();
-    } catch (err) {
-      console.error('Error resuming subscription:', err);
-      setError({ message: 'Failed to resume subscription' });
+      return { url: result.url };
+    } catch (error) {
+      console.error('Error managing subscription:', error);
+      return { error: 'Failed to manage subscription' };
     }
   };
 
@@ -154,9 +117,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         isLoading,
         error,
         createCheckoutSession,
-        createCustomerPortalSession,
-        cancelSubscription,
-        resumeSubscription
+        manageSubscription,
       }}
     >
       {children}

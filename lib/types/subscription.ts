@@ -15,8 +15,13 @@ export interface Subscription {
   cancelAtPeriodEnd: boolean;
 }
 
-export interface SubscriptionDetails extends Subscription {
-  stripeCustomerId: string | null;
+export interface SubscriptionDetails {
+  id: string;
+  status: SubscriptionStatus;
+  plan: 'monthly' | 'annual';
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  stripeCustomerId: string;
   isCanceled: boolean;
   isActive: boolean;
   isTrialing: boolean;
@@ -25,16 +30,14 @@ export interface SubscriptionDetails extends Subscription {
 
 export interface CreateCheckoutSessionData {
   priceId: string;
-  successUrl: string;
-  cancelUrl: string;
-  customerEmail?: string;
+  successUrl?: string;
+  cancelUrl?: string;
 }
 
 export interface ManageSubscriptionData {
-  returnUrl: string;
+  returnUrl?: string;
 }
 
 export interface SubscriptionError {
   message: string;
-  code?: string;
 } 

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useSubscription } from '@/lib/context/subscription-context';
 import type { CreateCheckoutSessionData, ManageSubscriptionData } from '@/lib/types/subscription';
