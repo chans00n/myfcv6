@@ -69,15 +69,24 @@ export async function middleware(request: NextRequest) {
     '/privacy',
   ]
 
-  // Check if the current path is a public route
+  // Check if the current path is a public route or an auth-related API route
   const isPublicRoute = publicRoutes.some(route => path === route || path.startsWith('/api/auth/'))
+  const isAuthenticatedApiRoute = path.startsWith('/api/subscriptions/')
 
   // If the route is not public and there's no session, redirect to login
-  if (!isPublicRoute && !session) {
+  if (!isPublicRoute && !isAuthenticatedApiRoute && !session) {
     const redirectUrl = new URL('/auth/login', request.url)
     // Add the current path as a redirect parameter
     redirectUrl.searchParams.set('redirectTo', path)
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // For authenticated API routes, check session
+  if (isAuthenticatedApiRoute && !session) {
+    return NextResponse.json(
+      { error: 'Not authenticated' },
+      { status: 401 }
+    )
   }
 
   // Special handling for admin routes
@@ -102,8 +111,10 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - api routes (except /api/auth/*)
+     * - api routes (except /api/auth/* and /api/subscriptions/*)
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|public).*)',
+    '/api/subscriptions/:path*',
+    '/api/auth/:path*'
   ],
 } 
