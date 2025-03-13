@@ -172,8 +172,9 @@ export default function WorkoutsPage() {
   }
 
   const handleViewModeChange = (mode: string) => {
+    console.log('View mode change:', mode)
     if (mode === "calendar" || mode === "list") {
-      setViewMode(mode)
+      setViewMode(mode as "calendar" | "list")
     }
   }
 

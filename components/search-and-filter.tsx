@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Filter, SlidersHorizontal, Grid, List, X } from "lucide-react"
+import { Search, Filter, SlidersHorizontal, Grid, List, X, Calendar } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -220,10 +220,17 @@ export function SearchAndFilter({
         </DropdownMenu>
 
         {/* View Mode Toggle */}
-        <Tabs value={viewMode} onValueChange={onViewModeChange} className="hidden sm:block">
+        <Tabs 
+          value={viewMode} 
+          onValueChange={(value) => {
+            console.log('Tab value change:', value);
+            onViewModeChange(value);
+          }} 
+          className="hidden sm:block"
+        >
           <TabsList className="h-10">
-            <TabsTrigger value="grid" className="px-3">
-              <Grid className="h-4 w-4" />
+            <TabsTrigger value="calendar" className="px-3">
+              <Calendar className="h-4 w-4" />
             </TabsTrigger>
             <TabsTrigger value="list" className="px-3">
               <List className="h-4 w-4" />
