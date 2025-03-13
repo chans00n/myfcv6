@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import PaywallModal from '@/components/subscription/PaywallModal'
+import PaywallModal from '../components/subscription/PaywallModal'
 
 export const metadata: Metadata = {
   title: "Choose Your Plan - MYFC",
