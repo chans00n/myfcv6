@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { createServerClient } from "@/lib/supabase/server"
 
 export async function clearSession() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient()
   
   // Clear Supabase session
@@ -18,6 +18,12 @@ export async function clearSession() {
   ]
   
   for (const name of supabaseCookies) {
-    cookieStore.delete(name)
+    cookieStore.delete({
+      name,
+      domain: '.myfc.app',
+      path: '/',
+      secure: true,
+      sameSite: 'lax'
+    })
   }
 } 

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const { event, session } = await request.json()
 
   if (event === 'SIGNED_IN') {
@@ -25,6 +25,9 @@ export async function POST(request: Request) {
               name,
               value,
               ...options,
+              domain: '.myfc.app',
+              secure: true,
+              sameSite: 'lax'
             })
           },
           remove(name: string, options: CookieOptions) {
@@ -32,6 +35,9 @@ export async function POST(request: Request) {
               name,
               value: '',
               ...options,
+              domain: '.myfc.app',
+              secure: true,
+              sameSite: 'lax'
             })
           },
         },

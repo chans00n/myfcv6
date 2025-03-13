@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const response = new NextResponse(JSON.stringify({ message: 'Cookie cleared' }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
@@ -22,6 +22,9 @@ export async function POST() {
             name,
             value,
             ...options,
+            domain: '.myfc.app',
+            secure: true,
+            sameSite: 'lax'
           })
         },
         remove(name: string, options: CookieOptions) {
@@ -29,6 +32,9 @@ export async function POST() {
             name,
             value: '',
             ...options,
+            domain: '.myfc.app',
+            secure: true,
+            sameSite: 'lax'
           })
         },
       },
