@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useSubscription } from '@/lib/context/subscription-context';
 import type { ManageSubscriptionData } from '@/lib/types/subscription';
-import { STRIPE_CONFIG } from '@/lib/stripe/config';
 
 export function useManageSubscription() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +17,7 @@ export function useManageSubscription() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          priceId: STRIPE_CONFIG.prices.monthly.stripePriceId,
+          priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID,
           successUrl: `${window.location.origin}/settings?tab=billing&status=success`,
           cancelUrl: `${window.location.origin}/settings?tab=billing&status=cancelled`
         })
