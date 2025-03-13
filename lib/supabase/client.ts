@@ -58,16 +58,9 @@ export function getSupabaseBrowserClient() {
               
               const value = decodeURIComponent(cookie.split('=')[1].trim())
               
-              // Handle base64 encoded cookies
+              // Return base64 cookies as-is without parsing
               if (value.startsWith('base64-')) {
-                const base64Value = value.replace('base64-', '')
-                if (isBase64(base64Value)) {
-                  try {
-                    return JSON.parse(atob(base64Value))
-                  } catch {
-                    return atob(base64Value)
-                  }
-                }
+                return value
               }
               
               // Try to parse as JSON if not base64
