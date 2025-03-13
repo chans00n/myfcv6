@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSubscription } from '@/lib/context/subscription-context';
 import type { ManageSubscriptionData } from '@/lib/types/subscription';
+import { STRIPE_CONFIG } from '@/lib/stripe/config';
 
 export function useManageSubscription() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,6 +14,14 @@ export function useManageSubscription() {
     try {
       const response = await fetch('/api/subscriptions/create', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          priceId: STRIPE_CONFIG.prices.monthly.stripePriceId,
+          successUrl: `${window.location.origin}/settings?tab=billing&status=success`,
+          cancelUrl: `${window.location.origin}/settings?tab=billing&status=cancelled`
+        })
       });
 
       const data = await response.json();
