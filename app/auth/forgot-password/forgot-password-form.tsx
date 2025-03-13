@@ -69,7 +69,12 @@ export default function ForgotPasswordForm() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="name@example.com" {...field} />
+                        <Input 
+                          placeholder="name@example.com" 
+                          type="email"
+                          autoComplete="username"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
