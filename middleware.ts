@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
   '/auth/callback',
   '/terms',
   '/privacy',
+  '/subscribe',
 ]
 
 const SUBSCRIPTION_REQUIRED_ROUTES = [
@@ -33,6 +34,7 @@ export async function middleware(req: NextRequest) {
   // Handle auth routes
   const isPublicRoute = PUBLIC_ROUTES.some(route => req.nextUrl.pathname.startsWith(route))
   const requiresSubscription = SUBSCRIPTION_REQUIRED_ROUTES.some(route => req.nextUrl.pathname.startsWith(route))
+  const isSubscribePage = req.nextUrl.pathname === '/subscribe'
 
   if (!session) {
     // If not logged in and trying to access protected route, redirect to login
@@ -49,12 +51,29 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
+  // Special handling for subscribe page when logged in
+  if (isSubscribePage && session) {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', session.user.id)
+        .single()
+
+      if (profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing') {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+      }
+    } catch (error) {
+      console.error('Error checking subscription status:', error)
+    }
+  }
+
   // Check subscription status for protected routes
   if (requiresSubscription) {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('subscription_id, subscription_status')
+        .select('subscription_status')
         .eq('id', session.user.id)
         .single()
 
