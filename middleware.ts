@@ -9,6 +9,7 @@ export async function middleware(request: NextRequest) {
   // Get the hostname from the request
   const hostname = request.headers.get('host') || ''
   const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1')
+  const isMembers = hostname.includes('members.myfc.app')
 
   // Create a Supabase client using server runtime
   const supabase = createServerClient(
@@ -20,33 +21,39 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          // Only set domain for production
           const cookieOptions = {
             name,
             value,
             ...options,
             secure: true,
-            sameSite: 'lax' as const
+            sameSite: 'lax' as const,
+            path: '/'
           }
           
-          if (!isLocalhost) {
+          // Set appropriate domain based on environment
+          if (isMembers) {
+            cookieOptions.domain = 'members.myfc.app'
+          } else if (!isLocalhost) {
             cookieOptions.domain = '.myfc.app'
           }
           
           response.cookies.set(cookieOptions)
         },
         remove(name: string, options: CookieOptions) {
-          // Only set domain for production
           const cookieOptions = {
             name,
             value: '',
             ...options,
             expires: new Date(0),
             secure: true,
-            sameSite: 'lax' as const
+            sameSite: 'lax' as const,
+            path: '/'
           }
           
-          if (!isLocalhost) {
+          // Set appropriate domain based on environment
+          if (isMembers) {
+            cookieOptions.domain = 'members.myfc.app'
+          } else if (!isLocalhost) {
             cookieOptions.domain = '.myfc.app'
           }
           
