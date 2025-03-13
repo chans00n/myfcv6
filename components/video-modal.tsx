@@ -188,11 +188,15 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
     if (!isOpen) return
 
     if (!isYouTube && videoRef.current) {
+      videoRef.current.load()
       const timer = setTimeout(() => {
         videoRef.current
           ?.play()
           .then(() => setIsPlaying(true))
-          .catch((err) => console.error("Autoplay failed:", err))
+          .catch((err) => {
+            console.error("Autoplay failed:", err)
+            setIsPlaying(false)
+          })
       }, 300)
 
       return () => clearTimeout(timer)
@@ -202,11 +206,11 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
   // Clean up when modal closes
   useEffect(() => {
     if (!isOpen) {
+      setIsPlaying(false)
+      setCurrentTime(0)
       if (!isYouTube && videoRef.current) {
         videoRef.current.pause()
         videoRef.current.currentTime = 0
-        setIsPlaying(false)
-        setCurrentTime(0)
       }
     }
   }, [isOpen, isYouTube])
@@ -218,6 +222,15 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
         className={`p-0 ${isMobile ? "max-w-none w-full h-[100dvh] m-0 rounded-none" : "sm:max-w-[800px]"}`}
         onInteractOutside={(e) => e.preventDefault()}
       >
+        {!isMobile && (
+          <button
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
+            onClick={() => setIsOpen(false)}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
+        )}
         <DialogTitle className="sr-only">{videoTitle || "Video Player"}</DialogTitle>
         {isMobile ? (
           <div className="relative w-full h-full bg-black flex flex-col">
@@ -231,12 +244,13 @@ export function VideoModal({ videoUrl, videoTitle, children }: VideoModalProps) 
                   src={videoUrl}
                   className="absolute inset-0 w-full h-full object-cover"
                   playsInline
+                  preload="auto"
                   onClick={togglePlayPause}
                 />
               )}
 
-              {/* Top controls */}
-              <div className="absolute top-4 left-4 z-10">
+              {/* Top controls - Adjusted positioning */}
+              <div className="fixed top-[env(safe-area-inset-top)] inset-x-0 z-50 p-4">
                 <Button
                   variant="outline"
                   size="icon"

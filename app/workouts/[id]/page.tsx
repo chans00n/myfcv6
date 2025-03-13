@@ -18,7 +18,8 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
     duration: "15 minutes",
     type: "Facial Fitness",
     level: "intermediate" as const,
-    videoUrl: "/videos/workout-sample.mp4",
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", // Using a sample video for testing
+    thumbnailUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg", // Adding thumbnail
     date: new Date().toISOString(), // Adding date for the favorite functionality
     image: "/placeholder.svg?height=400&width=600", // Adding image for the favorite functionality
     coach: {
@@ -90,16 +91,23 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
         {/* Main content - takes up 2/3 of the space on desktop */}
         <div className="md:col-span-2 space-y-6 min-w-0">
           <div className="aspect-video relative rounded-lg overflow-hidden bg-gray-950 flex items-center justify-center">
-            <VideoModal videoUrl={workout.videoUrl}>
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute inset-0 w-full h-full bg-transparent hover:bg-black/50 rounded-none border-0 flex items-center justify-center group"
-              >
-                <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play className="h-6 w-6 text-primary-foreground" />
-                </div>
-              </Button>
+            <VideoModal videoUrl={workout.videoUrl} videoTitle={workout.title}>
+              <div className="relative w-full h-full">
+                <img
+                  src={workout.thumbnailUrl}
+                  alt={workout.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute inset-0 w-full h-full bg-black/30 hover:bg-black/50 rounded-none border-0 flex items-center justify-center group"
+                >
+                  <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Play className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                </Button>
+              </div>
             </VideoModal>
           </div>
 
