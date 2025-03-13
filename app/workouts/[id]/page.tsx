@@ -18,10 +18,10 @@ export default function WorkoutDetailPage({ params }: { params: { id: string } }
     duration: "15 minutes",
     type: "Facial Fitness",
     level: "intermediate" as const,
-    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", // Using a sample video for testing
-    thumbnailUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg", // Adding thumbnail
-    date: new Date().toISOString(), // Adding date for the favorite functionality
-    image: "/placeholder.svg?height=400&width=600", // Adding image for the favorite functionality
+    videoUrl: "https://www.youtube.com/watch?v=4SBoTzwSQB8",
+    thumbnailUrl: "https://img.youtube.com/vi/4SBoTzwSQB8/maxresdefault.jpg",
+    date: new Date().toISOString(),
+    image: "/placeholder.svg?height=400&width=600",
     coach: {
       name: "Zionna Hanson",
       image: "/placeholder.svg?height=96&width=96",
