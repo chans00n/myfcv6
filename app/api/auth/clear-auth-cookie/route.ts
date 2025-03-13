@@ -4,9 +4,30 @@ import { NextResponse } from 'next/server'
 
 export async function POST() {
   const cookieStore = await cookies()
-  const response = new NextResponse(JSON.stringify({ message: 'Cookie cleared' }), {
+  const response = new NextResponse(JSON.stringify({ message: 'Cookies cleared' }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
+  })
+
+  // Get all cookies to find auth-related ones
+  const allCookies = cookieStore.getAll()
+  const authCookies = allCookies.filter(cookie => 
+    cookie.name.includes('supabase') || 
+    cookie.name.includes('auth') ||
+    cookie.name.includes('sb-')
+  )
+
+  // Clear each auth cookie
+  authCookies.forEach(cookie => {
+    response.cookies.set({
+      name: cookie.name,
+      value: '',
+      path: '/',
+      domain: '.myfc.app',
+      expires: new Date(0),
+      secure: true,
+      sameSite: 'lax'
+    })
   })
 
   const supabase = createServerClient(
@@ -33,6 +54,7 @@ export async function POST() {
             value: '',
             ...options,
             domain: '.myfc.app',
+            expires: new Date(0),
             secure: true,
             sameSite: 'lax'
           })
@@ -43,5 +65,6 @@ export async function POST() {
 
   // Clear the session
   await supabase.auth.signOut()
+  
   return response
 } 

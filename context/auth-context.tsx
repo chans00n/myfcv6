@@ -79,11 +79,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
+    try {
+      // First, clear cookies on the server
+      const response = await fetch('/api/auth/clear-auth-cookie', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to clear auth cookies')
+      }
+
+      // Then sign out on the client
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+
+      // Clear user state
+      setUser(null)
+
+      // Redirect to login
+      router.push("/auth/login")
+    } catch (error: any) {
+      console.error("Logout error:", error)
+      // Still try to redirect to login even if there's an error
+      router.push("/auth/login")
       throw error
     }
-    router.push("/auth/login")
   }
 
   return (
