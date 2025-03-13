@@ -24,18 +24,6 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Main Image Section */}
-        <div className="w-full aspect-[16/9] relative">
-          <Image
-            src="/main-home.png"
-            alt="MYFC Home Illustration"
-            fill
-            className="object-contain"
-            priority
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 800px"
-          />
-        </div>
-
         {/* Main Content */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
