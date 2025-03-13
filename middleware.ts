@@ -39,32 +39,44 @@ export async function middleware(request: NextRequest) {
         },
         set(name: string, value: string, options: CookieOptions) {
           // Set cookie with proper domain handling
-          console.log('Setting cookie:', { name, domain: isLocalhost ? undefined : `.${domain}` });
-          response.cookies.set({
+          const cookieOptions = {
             name,
             value,
             ...options,
-            domain: isLocalhost ? undefined : `.${domain}`,
             path: '/',
-            sameSite: 'lax',
+            sameSite: 'lax' as const,
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true
-          })
+          };
+
+          // Only set domain for non-localhost
+          if (!isLocalhost) {
+            cookieOptions.domain = `.${domain}`;
+          }
+
+          console.log('Setting cookie:', { name, value, domain: cookieOptions.domain });
+          response.cookies.set(cookieOptions);
         },
         remove(name: string, options: CookieOptions) {
           // Remove cookie with proper domain handling
-          console.log('Removing cookie:', { name, domain: isLocalhost ? undefined : `.${domain}` });
-          response.cookies.set({
+          const cookieOptions = {
             name,
             value: '',
             ...options,
-            domain: isLocalhost ? undefined : `.${domain}`,
             path: '/',
             expires: new Date(0),
-            sameSite: 'lax',
+            sameSite: 'lax' as const,
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true
-          })
+          };
+
+          // Only set domain for non-localhost
+          if (!isLocalhost) {
+            cookieOptions.domain = `.${domain}`;
+          }
+
+          console.log('Removing cookie:', { name, domain: cookieOptions.domain });
+          response.cookies.set(cookieOptions);
         },
       },
     }
@@ -77,15 +89,38 @@ export async function middleware(request: NextRequest) {
     domain,
     isLocalhost,
     cookies: {
-      all: request.cookies.getAll(),
+      all: request.cookies.getAll().map(c => ({ name: c.name, value: c.value })),
       auth: request.cookies.get('sb-access-token')?.value,
-      refresh: request.cookies.get('sb-refresh-token')?.value
+      refresh: request.cookies.get('sb-refresh-token')?.value,
+      session: request.cookies.get('supabase-auth-token')?.value
     },
-    headers: Object.fromEntries(request.headers.entries())
+    headers: {
+      ...Object.fromEntries(request.headers.entries()),
+      authorization: request.headers.get('authorization') ? 'Bearer [redacted]' : 'none',
+      cookie: request.headers.get('cookie')
+    }
   })
 
   // Check auth status
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  
+  // If no session from cookies, try Authorization header
+  if (!session) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: tokenError } = await supabase.auth.getUser(token);
+      
+      if (!tokenError && user) {
+        console.log('User authenticated via token:', {
+          userId: user.id,
+          email: user.email
+        });
+      } else {
+        console.error('Token validation failed:', tokenError);
+      }
+    }
+  }
   
   // Debug session information
   console.log('Session check:', {
@@ -93,7 +128,8 @@ export async function middleware(request: NextRequest) {
     error: sessionError,
     userId: session?.user?.id,
     path: request.url,
-    cookies: request.headers.get('cookie')
+    cookies: request.headers.get('cookie'),
+    authorization: request.headers.get('authorization') ? 'Bearer [redacted]' : 'none'
   })
 
   // Get the pathname

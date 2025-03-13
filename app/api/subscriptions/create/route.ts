@@ -11,31 +11,70 @@ export async function POST(request: Request) {
     // Get session and log debug info
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
+    // Log auth details
+    const authHeader = request.headers.get('authorization');
     console.log('Create subscription attempt:', {
       hasSession: !!session,
       sessionError,
-      userId: session?.user?.id
+      userId: session?.user?.id,
+      headers: {
+        cookie: request.headers.get('cookie'),
+        authorization: authHeader ? 'Bearer [redacted]' : 'none'
+      }
     });
+
+    // Check Authorization header
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: tokenError } = await supabase.auth.getUser(token);
+      
+      if (!tokenError && user) {
+        console.log('User authenticated via token:', {
+          userId: user.id,
+          email: user.email
+        });
+      } else {
+        console.error('Token validation failed:', tokenError);
+      }
+    }
 
     if (sessionError) {
       console.error('Session error:', sessionError);
       return NextResponse.json(
         { error: 'Authentication error', details: sessionError.message },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'WWW-Authenticate': 'Bearer error="invalid_token"',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          }
+        }
       );
     }
 
     if (!session) {
+      console.error('No session found');
       return NextResponse.json(
         { error: 'Not authenticated' },
         { 
           status: 401,
           headers: {
-            'WWW-Authenticate': 'Bearer error="invalid_token"'
+            'WWW-Authenticate': 'Bearer error="invalid_token"',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
           }
         }
       );
     }
+
+    // Log successful authentication
+    console.log('User authenticated:', {
+      userId: session.user.id,
+      email: session.user.email
+    });
 
     const { successUrl, cancelUrl, planType = 'monthly' } = await request.json();
 

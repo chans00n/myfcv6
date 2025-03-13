@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSubscription } from '@/lib/context/subscription-context';
 import { useAuth } from '@/context/auth-context';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { ManageSubscriptionData } from '@/lib/types/subscription';
 
 export function useManageSubscription() {
@@ -27,10 +28,18 @@ export function useManageSubscription() {
         console.log('Session refreshed successfully');
       }
 
+      // Log request attempt
+      console.log('Starting subscription request:', {
+        userId: user?.id,
+        email: user?.email,
+        hasSession: !!user
+      });
+
       const response = await fetch('/api/subscriptions/create', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getAuthToken()}`
         },
         body: JSON.stringify({
           successUrl: `${window.location.origin}/settings?tab=billing&status=success`,
@@ -38,6 +47,14 @@ export function useManageSubscription() {
           planType: 'monthly'
         }),
         credentials: 'include' // Important: include cookies in the request
+      });
+
+      // Log response status
+      console.log('Subscription API response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        userId: user?.id
       });
 
       if (!response.ok) {
@@ -48,6 +65,17 @@ export function useManageSubscription() {
           data,
           userId: user?.id
         });
+
+        // Handle specific error cases
+        if (response.status === 401) {
+          console.log('Authentication failed, attempting session refresh');
+          const refreshed = await refreshSession();
+          if (!refreshed) {
+            throw new Error('Your session has expired. Please log in again.');
+          }
+          throw new Error('Please try again. Your session has been refreshed.');
+        }
+
         throw new Error(data.error || data.details || 'Failed to create checkout session');
       }
 
@@ -73,6 +101,19 @@ export function useManageSubscription() {
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to get auth token
+  const getAuthToken = async () => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      return session?.access_token;
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
     }
   };
 
