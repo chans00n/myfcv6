@@ -25,13 +25,18 @@ export default function HomePage() {
         </div>
 
         {/* Main Content */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
-            Elevate Your Routine
-          </h1>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-muted-foreground">
-            with Facial Fitness
-          </h1>
+        <div className="text-center space-y-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
+              Elevate Your Routine
+            </h1>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-muted-foreground">
+              with Facial Fitness
+            </h1>
+          </div>
+          <p className="text-lg text-muted-foreground max-w-lg">
+            Let's make facial fitness a natural part of your daily wellness routine—because when you look strong, you feel strong.
+          </p>
         </div>
 
         {/* Button Section */}
