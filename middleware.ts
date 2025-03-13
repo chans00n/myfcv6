@@ -3,11 +3,29 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Create a response early to handle preflight requests
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token',
+        'Access-Control-Max-Age': '86400',
+      },
+    })
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
+
+  // Get the domain from the request
+  const requestUrl = new URL(request.url)
+  const domain = requestUrl.hostname
+  const isLocalhost = domain === 'localhost' || domain === '127.0.0.1'
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,22 +36,30 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
+          // Set cookie with proper domain handling
           response.cookies.set({
             name,
             value,
             ...options,
+            domain: isLocalhost ? undefined : `.${domain}`,
+            path: '/',
             sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production'
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true
           })
         },
         remove(name: string, options: CookieOptions) {
+          // Remove cookie with proper domain handling
           response.cookies.set({
             name,
             value: '',
             ...options,
+            domain: isLocalhost ? undefined : `.${domain}`,
+            path: '/',
             expires: new Date(0),
             sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production'
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true
           })
         },
       },
@@ -41,10 +67,17 @@ export async function middleware(request: NextRequest) {
   )
 
   // Debug cookie information
-  console.log('Cookies:', {
-    all: request.cookies.getAll(),
-    auth: request.cookies.get('sb-access-token'),
-    refresh: request.cookies.get('sb-refresh-token')
+  console.log('Request details:', {
+    url: request.url,
+    method: request.method,
+    domain,
+    isLocalhost,
+    cookies: {
+      all: request.cookies.getAll(),
+      auth: request.cookies.get('sb-access-token')?.value,
+      refresh: request.cookies.get('sb-refresh-token')?.value
+    },
+    headers: Object.fromEntries(request.headers.entries())
   })
 
   // Check auth status
@@ -60,7 +93,7 @@ export async function middleware(request: NextRequest) {
   })
 
   // Get the pathname
-  const path = new URL(request.url).pathname
+  const path = requestUrl.pathname
 
   // Define public routes that don't require authentication
   const publicRoutes = [
@@ -97,17 +130,18 @@ export async function middleware(request: NextRequest) {
         cookies: request.headers.get('cookie'),
         headers: Object.fromEntries(request.headers.entries())
       })
+
+      // Set CORS headers for API responses
+      const headers = {
+        'WWW-Authenticate': 'Bearer error="invalid_token"',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token',
+      }
+
       return NextResponse.json(
-        { error: 'Not authenticated' },
-        { 
-          status: 401,
-          headers: {
-            'WWW-Authenticate': 'Bearer error="invalid_token"',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-          }
-        }
+        { error: 'Not authenticated', details: 'Session not found or invalid' },
+        { status: 401, headers }
       )
     }
     
@@ -126,6 +160,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
+
+  // Set CORS headers for all responses
+  response.headers.set('Access-Control-Allow-Origin', '*')
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token')
 
   return response
 }

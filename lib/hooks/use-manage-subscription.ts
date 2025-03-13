@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useSubscription } from '@/lib/context/subscription-context';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { useAuth } from '@/context/auth-context';
 import type { ManageSubscriptionData } from '@/lib/types/subscription';
 
 export function useManageSubscription() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refetch } = useSubscription();
-  const supabase = getSupabaseBrowserClient();
+  const { user, refreshSession } = useAuth();
 
   const startSubscription = async () => {
     setIsLoading(true);
@@ -17,16 +17,11 @@ export function useManageSubscription() {
     
     try {
       // First check if we have a valid session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      console.log('Subscription attempt:', {
-        hasSession: !!session,
-        sessionError,
-        userId: session?.user?.id
-      });
-
-      if (sessionError || !session) {
-        throw new Error('Please log in to continue');
+      if (!user) {
+        const session = await refreshSession();
+        if (!session) {
+          throw new Error('Please log in to continue');
+        }
       }
 
       const response = await fetch('/api/subscriptions/create', {
@@ -46,7 +41,8 @@ export function useManageSubscription() {
       console.log('Subscription response:', {
         status: response.status,
         ok: response.ok,
-        data
+        data,
+        userId: user?.id
       });
 
       if (!response.ok) {
@@ -59,7 +55,8 @@ export function useManageSubscription() {
       console.error('Error starting subscription:', {
         error,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
+        userId: user?.id
       });
       setError(error.message || 'Failed to start subscription');
       throw error;
@@ -73,6 +70,14 @@ export function useManageSubscription() {
     setError(null);
     
     try {
+      // Ensure we have a valid session
+      if (!user) {
+        const session = await refreshSession();
+        if (!session) {
+          throw new Error('Please log in to continue');
+        }
+      }
+
       const response = await fetch('/api/subscriptions/manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +93,8 @@ export function useManageSubscription() {
       console.log('Manage subscription response:', {
         status: response.status,
         ok: response.ok,
-        result
+        result,
+        userId: user?.id
       });
 
       if (!response.ok) {
@@ -100,7 +106,8 @@ export function useManageSubscription() {
       console.error('Error managing subscription:', {
         error,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
+        userId: user?.id
       });
       setError(error.message || 'Failed to manage subscription');
       throw error;
@@ -111,18 +118,36 @@ export function useManageSubscription() {
 
   const cancelSubscription = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
+      // Ensure we have a valid session
+      if (!user) {
+        const session = await refreshSession();
+        if (!session) {
+          throw new Error('Please log in to continue');
+        }
+      }
+
       const response = await fetch('/api/subscriptions/cancel', {
         method: 'POST',
+        credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error('Failed to cancel subscription');
+        const data = await response.json();
+        throw new Error(data.error || data.details || 'Failed to cancel subscription');
       }
 
       await refetch();
-    } catch (error) {
-      console.error('Error canceling subscription:', error);
+    } catch (error: any) {
+      console.error('Error canceling subscription:', {
+        error,
+        message: error.message,
+        stack: error.stack,
+        userId: user?.id
+      });
+      setError(error.message || 'Failed to cancel subscription');
       throw error;
     } finally {
       setIsLoading(false);
@@ -131,18 +156,36 @@ export function useManageSubscription() {
 
   const resumeSubscription = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
+      // Ensure we have a valid session
+      if (!user) {
+        const session = await refreshSession();
+        if (!session) {
+          throw new Error('Please log in to continue');
+        }
+      }
+
       const response = await fetch('/api/subscriptions/resume', {
         method: 'POST',
+        credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error('Failed to resume subscription');
+        const data = await response.json();
+        throw new Error(data.error || data.details || 'Failed to resume subscription');
       }
 
       await refetch();
-    } catch (error) {
-      console.error('Error resuming subscription:', error);
+    } catch (error: any) {
+      console.error('Error resuming subscription:', {
+        error,
+        message: error.message,
+        stack: error.stack,
+        userId: user?.id
+      });
+      setError(error.message || 'Failed to resume subscription');
       throw error;
     } finally {
       setIsLoading(false);
